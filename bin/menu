@@ -11,7 +11,6 @@ config="config/$pack_d"
 free_place() {
 	unset get_size
 	unset get_size_print
-
 	echo
 	echo
 	echo ".....Введите желаемый размер свободного места для собираемого образа в мегабайтах:"
