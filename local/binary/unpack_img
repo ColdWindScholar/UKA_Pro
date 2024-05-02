@@ -13,48 +13,7 @@ zst=$(busybox hexdump -C -n 2000 "$file" | busybox grep -o "28 b5 2f fd")
 erofs="$(busybox hexdump -C -n 2000 "$file" | busybox grep -o 'e2 e1 f5 e0')"
 sparse_super=$(busybox hexdump -C -n 20000 "$file" | grep -o "3a ff 26 ed")
 
-erfs() {
 
-	if [ -d erofs/"$r_name" ]; then
-
-		echo
-		echo ".....Удаление старой папки /data/local/UnpackerSystem/erofs/"$r_name""
-		umount erofs/"$r_name"
-		busybox rm -rf erofs/"$r_name"
-	fi
-
-	mkdir -p erofs/"$r_name"
-	erofsfuse "$file" erofs/"$r_name"
-	if [ $(echo $?) -eq 0 ]; then
-		echo
-		echo ".....Распаковка $file..."
-		busybox tar -cf erofs.tar erofs/"$r_name"
-		if [ $(echo $?) -eq 0 ]; then
-			umount erofs/"$r_name"
-			if [ $(echo $?) -eq 0 ]; then
-				busybox tar -xf erofs.tar -C /data/local/UnpackerSystem
-				echo
-				echo -e "\033[33;1m.....Успешно распаковано! \033[0m"
-				echo
-			else
-				echo
-				echo ".....Ошибка распаковки(...not extract tar)"
-				echo
-			fi
-		else
-			echo
-			echo ".....Ошибка распаковки(...not create tar)"
-			echo
-		fi
-	else
-		echo
-		echo ".....Ошибка распаковки(...not mount)"
-		echo
-	fi
-	umount erofs/"$r_name" 2>/dev/null
-	busybox rm -f erofs.tar
-	return
-}
 super_space() {
 	cd "$super_dir"
 	f_conf="config/super_config.txt"
