@@ -1,15 +1,17 @@
 from __future__ import print_function, division
-from sys import stderr
-from enum import IntEnum
-from struct import pack, unpack, calcsize
-from os import SEEK_CUR, SEEK_END, SEEK_SET
 
-#from __init__ import SparseChunkType
+from enum import IntEnum
+from os import SEEK_CUR, SEEK_END, SEEK_SET
+from struct import pack, calcsize
+from sys import stderr
+
+
 class SparseChunkType(IntEnum):
     RAW = 0xCAC1
     FILL = 0xCAC2
     DONT_CARE = 0xCAC3
     CRC32 = 0xCAC4
+
 
 class SimgWriter(object):
     file_header = "<I4H4I"
@@ -17,7 +19,7 @@ class SimgWriter(object):
     file_header_size = calcsize(file_header)
     chunk_header_size = calcsize(chunk_header)
 
-    def __init__(self, outf, start_block_offset = 0, end_block_offset = None, blocksize = 4096, debug = 0, dont_care = ()):
+    def __init__(self, outf, start_block_offset=0, end_block_offset=None, blocksize=4096, debug=0, dont_care=()):
         assert blocksize > 0
         assert blocksize % 4 == 0
 
@@ -28,13 +30,13 @@ class SimgWriter(object):
         self.debug = debug
         self.dont_care = dont_care
 
-        self.nchunks = 0         # number of chunks written
-        self.nblocks = 0         # number of blocks of data added
-        self.npadblocks = 0      # number of DONT_CARE blocks added
+        self.nchunks = 0  # number of chunks written
+        self.nblocks = 0  # number of blocks of data added
+        self.npadblocks = 0  # number of DONT_CARE blocks added
 
-        self.ctype = None        # SparseChunkType of current chunk
-        self.cval = None         # fill or CRC32 value for current chunk
-        self.csize = 0           # number of blocks in current chunk
+        self.ctype = None  # SparseChunkType of current chunk
+        self.cval = None  # fill or CRC32 value for current chunk
+        self.csize = 0  # number of blocks in current chunk
         self.buf = b''
 
         # leave room for file header, and write (optional) leading DONT_CARE blocks
@@ -54,32 +56,34 @@ class SimgWriter(object):
         return self.outf.tell()
 
     def flush(self):
-        self._close_chunk();
+        self._close_chunk()
 
     def _print_state(self, pfx, debug):
         if self.debug >= debug:
             print("%snchunks=%d, nblocks=%d, npadblocks=%d, ctype=%s, cval=%r, csize=%d, len(buf)=%d, tell()=%d" %
-                  (pfx, self.nchunks, self.nblocks, self.npadblocks, self.ctype and self.ctype.name, self.cval, self.csize, len(self.buf), self.tell()),
+                  (pfx, self.nchunks, self.nblocks, self.npadblocks, self.ctype and self.ctype.name, self.cval,
+                   self.csize, len(self.buf), self.tell()),
                   file=stderr)
 
     def close(self):
         if self.buf:
-            raise RuntimeError('%d leftover bytes (data written must be a multiple of blocksize %d)' % (len(self.buf), self.blocksize))
+            raise RuntimeError(
+                '%d leftover bytes (data written must be a multiple of blocksize %d)' % (len(self.buf), self.blocksize))
 
         # write final unwritten chunk and (optional) trailing DONT_CARE chunk
         self._close_chunk()
-        if self.end_block_offset != None:
+        if self.end_block_offset is not None:
             self._add_pad_blocks(self.end_block_offset - self.nblocks)
             self._close_chunk()
 
         self.outf.seek(0, SEEK_SET)
         self._print_state('  writing final header: ', 1)
-        self.outf.write( pack(self.file_header,
-                              0xED26FF3A, # magic
-                              1, 0, # version 1.0
-                              self.file_header_size, self.chunk_header_size, self.blocksize, self.nblocks, self.nchunks,
-                              0 # checksum
-                              ))
+        self.outf.write(pack(self.file_header,
+                             0xED26FF3A,  # magic
+                             1, 0,  # version 1.0
+                             self.file_header_size, self.chunk_header_size, self.blocksize, self.nblocks, self.nchunks,
+                             0  # checksum
+                             ))
         self.outf.seek(0, SEEK_END)
 
     def _close_chunk(self):
@@ -90,16 +94,16 @@ class SimgWriter(object):
 
         if self.ctype == SparseChunkType.RAW:
             databytes = self.csize * self.blocksize
-            self.outf.seek(- databytes - self.chunk_header_size, SEEK_CUR) # return to where chunk header belongs
+            self.outf.seek(- databytes - self.chunk_header_size, SEEK_CUR)  # return to where chunk header belongs
         elif self.ctype == SparseChunkType.DONT_CARE:
             databytes = 0
         else:
             databytes = len(self.cval)
 
-        self.outf.write( pack(self.chunk_header, self.ctype, 0, self.csize, self.chunk_header_size + databytes) )
+        self.outf.write(pack(self.chunk_header, self.ctype, 0, self.csize, self.chunk_header_size + databytes))
 
         if self.ctype == SparseChunkType.RAW:
-            self.outf.seek(0, SEEK_END) # go back to end of file
+            self.outf.seek(0, SEEK_END)  # go back to end of file
         elif self.ctype == SparseChunkType.DONT_CARE:
             pass
         else:
@@ -114,7 +118,8 @@ class SimgWriter(object):
         self._print_state('top of _add_pad_blocks: ', 2)
 
         if self.buf:
-            raise RuntimeError('%d leftover bytes (data written must be a multiple of blocksize %d)' % (len(self.buf), self.blocksize))
+            raise RuntimeError(
+                '%d leftover bytes (data written must be a multiple of blocksize %d)' % (len(self.buf), self.blocksize))
         if n <= 0:
             return
 
@@ -137,7 +142,7 @@ class SimgWriter(object):
 
         # determine correct chunk type
         cval = block[:4]
-        if block == cval * (self.blocksize//4):
+        if block == cval * (self.blocksize // 4):
             if cval in self.dont_care:
                 ctype = SparseChunkType.DONT_CARE
                 cval = None
@@ -175,7 +180,7 @@ class SimgWriter(object):
                 nblocks += 1
 
         for pp in range(pp, len(data), self.blocksize):
-            self.buf = data[pp : pp+self.blocksize]
+            self.buf = data[pp: pp + self.blocksize]
             if len(self.buf) == self.blocksize:
                 self._add_data_block()
                 nblocks += 1

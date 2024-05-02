@@ -10,8 +10,8 @@ Options:
 """
 
 from docopt import docopt
-args = docopt(__doc__, version='1.2')
 
+args = docopt(__doc__, version='1.2')
 
 import os
 import sys, stat
@@ -23,7 +23,8 @@ from zipfile import ZipFile
 keys = [
     "D6EECF0AE5ACD4E0E9FE522DE7CE381E",  # mnkey
     "D6ECCF0AE5ACD4E0E92E522DE7C1381E",  # mkey
-    "D6DCCF0AD5ACD4E0292E522DB7C1381E",  # realkey, R9s CPH1607 MSM8953, Plus, R11, RMX1921 Realme XT, RMX1851EX Realme Android 10, RMX1992EX_11_OTA_1050
+    "D6DCCF0AD5ACD4E0292E522DB7C1381E",
+    # realkey, R9s CPH1607 MSM8953, Plus, R11, RMX1921 Realme XT, RMX1851EX Realme Android 10, RMX1992EX_11_OTA_1050
     "D7DCCE1AD4AFDCE2393E5161CBDC4321",  # testkey
     "D7DBCE2AD4ADDCE1393E5521CBDC4321",  # utilkey
     "D7DBCE1AD4AFDCE1393E5121CBDC4321",  # R11s CPH1719 MSM8976, Plus
@@ -62,13 +63,13 @@ def keytest(data):
     for key in keys:
         ctx = AES.new(binascii.unhexlify(key), AES.MODE_ECB)
         dat = ctx.decrypt(data)
-        if (dat[0:4] == b'\x50\x4B\x03\x04'):
+        if dat[0:4] == b'\x50\x4B\x03\x04':
             print("Found correct AES key: " + key)
             return binascii.unhexlify(key)
-        elif (dat[0:4] == b'\x41\x56\x42\x30'):
+        elif dat[0:4] == b'\x41\x56\x42\x30':
             print("Found correct AES key: " + key)
             return binascii.unhexlify(key)
-        elif (dat[0:4] == b'\x41\x4E\x44\x52'):
+        elif dat[0:4] == b'\x41\x4E\x44\x52':
             print("Found correct AES key: " + key)
             return binascii.unhexlify(key)
     return -1
@@ -86,9 +87,10 @@ def rmrf(path):
         else:
             shutil.rmtree(path, onerror=del_rw)
 
+
 def decryptfile(key, rfilename):
-    with open(rfilename,'rb') as rr:
-        with open(rfilename+".tmp", 'wb') as wf:
+    with open(rfilename, 'rb') as rr:
+        with open(rfilename + ".tmp", 'wb') as wf:
             rr.seek(0x10)
             dsize = int(rr.read(0x10).replace(b"\x00", b"").decode('utf-8'), 10)
             rr.seek(0x1050)
@@ -96,7 +98,7 @@ def decryptfile(key, rfilename):
             flen = os.stat(rfilename).st_size - 0x1050
 
             ctx = AES.new(key, AES.MODE_ECB)
-            while (dsize > 0):
+            while dsize > 0:
                 if flen > 0x4000:
                     size = 0x4000
                 else:
@@ -111,32 +113,33 @@ def decryptfile(key, rfilename):
                 flen -= size
                 dsize -= size
     os.remove(rfilename)
-    os.rename(rfilename+".tmp",rfilename)
+    os.rename(rfilename + ".tmp", rfilename)
+
 
 def decryptfile2(key, rfilename, wfilename):
-    with open(rfilename,'rb') as rr:
+    with open(rfilename, 'rb') as rr:
         with open(wfilename, 'wb') as wf:
             print("Decrypting " + rfilename)
             ctx = AES.new(key, AES.MODE_ECB)
             bstart = 0
             goon = True
-            while (goon):
+            while goon:
                 rr.seek(bstart)
                 header = rr.read(12)
                 if len(header) == 0:
                     break
-                if (header != b"OPPOENCRYPT!"):
+                if header != b"OPPOENCRYPT!":
                     sys.exit(1)
                 rr.seek(0x10 + bstart)
                 bdsize = int(rr.read(0x10).replace(b"\x00", b"").decode('utf-8'), 10)
                 if bdsize < 0x40000:
                     goon = False
                 rr.seek(0x50 + bstart)
-                while (bdsize > 0):
+                while bdsize > 0:
                     data = rr.read(0x10)
                     if len(data) == 0:
                         break
-                    size = 0x10;
+                    size = 0x10
                     if bdsize < 0x10:
                         size = bdsize
                     dr = ctx.decrypt(data)
@@ -149,9 +152,10 @@ def decryptfile2(key, rfilename, wfilename):
                     wf.write(data)
                 bstart = bstart + 0x40000 + 0x50
 
+
 def mode2(filename):
-    temp=os.path.join(os.path.abspath(os.path.dirname(filename)), "temp")
-    out=os.path.join(os.path.abspath(os.path.dirname(filename)), "out")
+    temp = os.path.join(os.path.abspath(os.path.dirname(filename)), "temp")
+    out = os.path.join(os.path.abspath(os.path.dirname(filename)), "out")
     with open(filename, 'rb') as fr:
         magic = fr.read(12)
         if magic[:2] == b"PK":
@@ -169,7 +173,7 @@ def mode2(filename):
                 for r, d, f in os.walk(temp):
                     for file in f:
                         rfilename = os.path.join(r, file)
-                        relativefilename = rfilename[tmplen + 1 :]
+                        relativefilename = rfilename[tmplen + 1:]
                         wfilename = os.path.join(out, relativefilename)
                         wdirname = os.path.dirname(wfilename)
                         if not os.path.exists(wdirname):
@@ -177,14 +181,14 @@ def mode2(filename):
                         encrypted = False
                         with open(rfilename, 'rb') as rr:
                             magic = rr.read(12)
-                            if (magic == b"OPPOENCRYPT!"):
+                            if magic == b"OPPOENCRYPT!":
                                 encrypted = True
-                                if testkey == True:
+                                if testkey:
                                     with open(os.path.join(temp, "boot.img"), "rb") as rt:
                                         rt.seek(0x50)
                                         data = rt.read(16)
                                         key = keytest(data)
-                                        if (key == -1):
+                                        if key == -1:
                                             print("Unknown AES key, reverse key from recovery first!")
                                             sys.exit(1)
                                     testkey = False
@@ -195,12 +199,13 @@ def mode2(filename):
                 rmrf(temp)
                 print("DONE... files decrypted to: " + out)
 
+
 def main():
     print("ozipdecrypt 1.1 (c) B.Kerler 2017-2020")
-    filename=args["<filename>"]
+    filename = args["<filename>"]
     with open(filename, 'rb') as fr:
         magic = fr.read(12)
-        if (magic == b"OPPOENCRYPT!"):
+        if magic == b"OPPOENCRYPT!":
             pk = False
         elif magic[:2] == b"PK":
             pk = True
@@ -208,11 +213,11 @@ def main():
             print("ozip has unknown magic, OPPOENCRYPT! expected!")
             sys.exit(1)
 
-        if pk == False:
+        if not pk:
             fr.seek(0x1050)
             data = fr.read(16)
             key = keytest(data)
-            if (key == -1):
+            if key == -1:
                 print("Unknown AES key, reverse key from recovery first!")
                 sys.exit(1)
             ctx = AES.new(key, AES.MODE_ECB)
@@ -220,7 +225,7 @@ def main():
             with open(filename, 'wb') as wf:
                 fr.seek(0x1050)
                 print("Decrypting...")
-                while (True):
+                while True:
                     data = fr.read(16)
                     if len(data) == 0:
                         break
@@ -262,11 +267,11 @@ def main():
                                 rt.seek(0x1050)
                                 data = rt.read(16)
                                 key = keytest(data)
-                                if (key == -1):
+                                if key == -1:
                                     print("Unknown AES key, reverse key from recovery first!")
                                     sys.exit(1)
                             testkey = False
-                    if testkey == True:
+                    if testkey:
                         print("Unknown image, please report an issue with image name!")
                         sys.exit(0)
 
@@ -283,9 +288,10 @@ def main():
                         magic = b''
                         with open(outfile, 'rb') as rr:
                             magic = rr.read(12)
-                        if (magic == b"OPPOENCRYPT!"):
+                        if magic == b"OPPOENCRYPT!":
                             decryptfile(key, outfile)
                 print("DONE... files decrypted to: " + outpath)
+
 
 if __name__ == '__main__':
     main()

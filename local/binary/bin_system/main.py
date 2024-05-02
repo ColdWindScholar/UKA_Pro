@@ -15,9 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import io
-import mmap
 import os
-import platform
 import struct
 import subprocess
 import sys
@@ -35,11 +33,11 @@ Description:
 
 
 def main():
-    #ver = platform.python_version()
-    #ver = tuple(map(int, (ver.split("."))))
-    #min_ver = tuple(map(int, ("3.9.0".split("."))))
-    #if ver < min_ver:
-        #sys.exit("ERROR: Python version too old. at least 3.9.0")
+    # ver = platform.python_version()
+    # ver = tuple(map(int, (ver.split("."))))
+    # min_ver = tuple(map(int, ("3.9.0".split("."))))
+    # if ver < min_ver:
+    # sys.exit("ERROR: Python version too old. at least 3.9.0")
     if len(sys.argv) == 1:
         sys.exit(help_message)
     if sys.argv[1] in ['-h', '--help']:
@@ -56,14 +54,16 @@ def main():
 def printi(text):
     print(f"INFO: {text}")
 
+
 def find_7z():
     if not windows:
-        return '7zz' if which('7zz') != None else '7z'
+        return '7zz' if which('7zz') is not None else '7z'
     key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, "Software\\7-Zip")
-    path =  winreg.QueryValueEx(key, "Path")[0] + "7z.exe"
+    path = winreg.QueryValueEx(key, "Path")[0] + "7z.exe"
     printi(f"Found 7-Zip at: {path}")
     return path
-    
+
+
 sz = find_7z()
 
 
@@ -93,6 +93,7 @@ class BootWork:
         fobj.write(f_in.read(size))
         return fobj
 
+
 # ------------------------------------------------------
 # Patch: Takes in a filepath to original zImage, returns modified.
 
@@ -107,11 +108,10 @@ class Patch:
                      everything, create an issue on github."
             raise Exception(f"ERROR: Size mismatch!\n{error_msg}")
 
-
-# split_zimg(filepath):
-#   Takes a path to original zImage, splits it in parts
-#   checking for inconsistancies in progress. Only the gzipped kernel is being modified afterwards
-#   everything else is reused.
+    # split_zimg(filepath):
+    #   Takes a path to original zImage, splits it in parts
+    #   checking for inconsistancies in progress. Only the gzipped kernel is being modified afterwards
+    #   everything else is reused.
 
     def split_zimg(self, zimg_file):
         zimg_file.seek(0x24)
@@ -134,15 +134,15 @@ class Patch:
         zimg_file.seek(self.gz_end)
         self.zimg_footer = zimg_file.read()
         self.pos = d.find(struct.pack("I", self.gz_end - 4))
-        if (self.pos < 0x24 or self.pos > 0x400 or self.pos > self.gz_begin):
+        if self.pos < 0x24 or self.pos > 0x400 or self.pos > self.gz_begin:
             raise Exception(
                 "ERROR: Can't find offset of orig GZIP size field")
         zimg_file.close()
         self.zimg_len = len(d)
 
-# kernel_work(gzip data):
-#   Takes original gzip data, unpacks it using inbuilt zlib
-#   patches by replacing a string, and then packs back modified one
+    # kernel_work(gzip data):
+    #   Takes original gzip data, unpacks it using inbuilt zlib
+    #   patches by replacing a string, and then packs back modified one
 
     def kernel_work(self, gz_data):
         p7z_pack = [
@@ -168,9 +168,9 @@ class Patch:
         self.kernel_sz = struct.pack("I", kernel_size)
         self.new_gz_size = len(self.new_gz_data)
 
-# join_zimg():
-#   Takes all the results of previous work
-#   gluing it together in a new modified zImage
+    # join_zimg():
+    #   Takes all the results of previous work
+    #   gluing it together in a new modified zImage
 
     def join_zimg(self):
         printi('Getting all back together...')
