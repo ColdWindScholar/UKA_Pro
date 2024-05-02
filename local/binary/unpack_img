@@ -1,33 +1,17 @@
 #!/system/bin/sh
-
  nd=$nd
- 
  cd /data/local/UnpackerSystem
- #r_name=$(echo $file | grep -Eo "system|vendor")
- 
- #r_name=$(echo $file | busybox sed 's!.*\/!!' | busybox awk -F"-|[+]|[.]|[{]|[(]" '{ print $1 }')
- 
-
  r="$(busybox basename $file)"
  r_name=${r%.*}
  config="config/$r_name"
  parts="$(echo "$r" | busybox grep -o "PARTITION")"
  exten=${r##*.}
- #echo "$parts"
- #echo "$r"
- #echo "$exten"
-
-
-
 
  super_dir=/data/local/UnpackerSuper
 opla=$(busybox hexdump -C -n 20000 "$file" | busybox grep -o "30 50 4c 41")
 zst=$(busybox hexdump -C -n 2000 "$file" | busybox grep -o "28 b5 2f fd") 
  erofs="$(busybox hexdump -C -n 2000 "$file" | busybox grep -o 'e2 e1 f5 e0')"
  sparse_super=$(busybox hexdump -C -n 20000 "$file" | grep -o "3a ff 26 ed")
-
-
-
 
  erfs()
 {
@@ -72,9 +56,6 @@ umount erofs/"$r_name" 2> /dev/null
 busybox rm -f erofs.tar
 return
 }
-
-
-
  super_space()
 {
  cd "$super_dir"
@@ -83,7 +64,6 @@ return
  s_conf_a="config/pack_size_a.txt"
  > "$s_conf"
  > "$s_conf_a"
-
 size_super="$(busybox cat "$f_conf" | busybox awk '/Size:/ { print $2 }')"
 
  max_size_super2="$(busybox cat "$f_conf" | busybox grep -A11 "Group table:" | busybox grep "Maximum size:" | busybox awk '{ print $3 }' | busybox sed -n "2p")"
@@ -239,12 +219,7 @@ return
  if [ "$need_slot" != "1" ]; then
  sl #функция выбора слота
  fi
- 
- 
- #echo
- #echo ".....Извлечение образов из "$file"..."
  echo
-
  for clean_file in $(busybox find /data/local/UnpackerSuper/* -maxdepth 1 ! -name "super*" -a ! -name "output" 2> /dev/null); do
  opla_file=$(busybox hexdump -C -n 20000 "$clean_file" 2> /dev/null | busybox grep -o "30 50 4c 41")
  if [ -z "$opla_file" ]; then
@@ -261,9 +236,6 @@ return
  echo
  lpunpack "$file" "$super_dir" && sss="0" || sss="1"
  fi
- #unset real_slot
- 
- #lpunpack "$file" "$super_dir"
 
  if [ $(echo $sss) -eq 0 ] ; then
  mkdir "$super_dir"/config 2> /dev/null
@@ -276,13 +248,10 @@ return
  lpdump --slot=1 "$file" 2> /dev/null > "$super_dir"/config/super_config1.txt
  unset real_slot
  fi
- 
  super_space
-
  echo
  echo -e "\033[33;1m.....Образы успешно извлечены в папку: $super_dir \033[0m"
  echo
-
  else
  echo
  echo ".....Ошибка при извлечении образов!"
@@ -371,8 +340,6 @@ done< "$config"/"$r_name"_space.txt
 busybox find "$r_name" -type d | busybox sed 's!$!_d!' > "$config"/"$r_name"_f.txt
 busybox find "$r_name" -type f | busybox sed 's!$!_f!' >> "$config"/"$r_name"_f.txt
 busybox find "$r_name" -type l | busybox sed 's!$!_l!' >> "$config"/"$r_name"_f.txt
-
-
 busybox find "$r_name" -type l | busybox xargs busybox tar -cf "$config"/"$r_name"_sim.tar
 
 }
@@ -426,14 +393,6 @@ if [ -f "$file" ]; then
  check_obraz()
 {
  mkdir -p "$config" 2> /dev/null
- #ld_path="$(echo "$LD_LIBRARY_PATH" | busybox grep -o "/data/local/binary/lib")" 
- #if [ -z "$LD_LIBRARY_PATH" ]; then
-#export LD_LIBRARY_PATH="/data/local/binary/lib"
- #else
- #if [ -z "$ld_path" ]; then
- #export LD_LIBRARY_PATH="/data/local/binary/lib:$LD_LIBRARY_PATH"
- #fi
- #fi
  if [ -z "$(busybox hexdump -C -n 20000 "$file" | grep -o "3a ff 26 ed")" ]; then
  echo
  echo ".....Проверка образа..."
@@ -443,14 +402,9 @@ if [ -f "$file" ]; then
 }
  check_obraz
 
- 
- #echo
  echo ".....Распаковка ${file}..."
-
  python31 /data/local/binary/bin_system/imgextractor1.py -i "$file" -o "$PWD"
- 
- #python31 /data/local/binary/bin_system/imgextractor1.py "$file" "$PWD"
- 
+
 if [ $(echo $?) -eq 0 ] ; then
  if [ -d ./"$r_name" -a -s "$config"/"$r_name"_fs_config ]; then
  
@@ -472,20 +426,12 @@ else
  echo 
  echo ".....Error! Нет распакованной папки или "$config"/"$r_name"_fs_config."
  fi
-
-
  h=$(busybox find "$r_name" | busybox grep [[:space:]])
-
- #if [ -d "$r_name"/"$r_name" -a "$r_name" == "system" ]; then
- #vv="$r_name"/"$r_name"
- #elif [ -d "$r_name" ]; then
  vv="$r_name"
- #fi
 
  check_sar()
 {
  if [ -f "$vv/system/build.prop" ]; then
- #echo "$sar"
  sar=true
  return 0
  else
@@ -494,15 +440,11 @@ else
  fi
 }
  check_sar
- 
-
  >"$config"/"$r_name"_gg_d.txt
  busybox find "$vv" -maxdepth 1 ! -path 'lost+found' -a ! -path "$vv" -type d | while read a; do
  echo
  busybox find "$a" ! -path 'lost+found' -a ! -path "$vv" -type d | busybox xargs busybox stat -c '%N %u %g %a' 2> /dev/null | busybox awk -F"/" '!($1 $2 $3 in a) {a[$1 $2 $3];print}'
 done >> "$config"/"$r_name"_gg_d.txt
-
-
 
  >"$config"/"$r_name"_tmp_f.txt
  busybox find "$vv" -maxdepth 1 ! -path 'lost+found' -type d | while read a; do
@@ -511,15 +453,8 @@ done >> "$config"/"$r_name"_gg_d.txt
 done >> "$config"/"$r_name"_tmp_f.txt
  busybox cat "$config"/"$r_name"_tmp_f.txt | busybox awk '!($0 in a) {a[$0];print}' > "$config"/"$r_name"_gg_f.txt && rm -f "$config"/"$r_name"_tmp_f.txt
 
-
  conf_clean()
  {
- #busybox cat "$config"/"$r_name"_fs_config | busybox awk '! /capabilities=/ { print $1" "$2" "$3" "$4 }' > "$config"/"$r_name"_fs_config_e2fsdroid
-#busybox cat "$config"/"$r_name"_fs_config | busybox awk '/capabilities=/ { print $1" "$2" "$3" "$4" "$5 }' >> "$config"/"$r_name"_fs_config_e2fsdroid
-
-#prava="$(busybox awk '{ print $2" "$3" "$4 }' "$config"/"$r_name"_gg_d.txt | busybox sort | busybox uniq -c | busybox sort -nk1 | busybox tail -1 | busybox awk '{ print $2" "$3" 0"$4 }')"
-
-#busybox sed -i -e "1 s!^!\/ $prava\n!;" "$config"/"$r_name"_fs_config_e2fsdroid
 
 echo busybox truncate -s '${size_obraz}' '${outdir}'/'${pack_d}'.new.img > "$config"/"$r_name"_pack_e2fsdroid.sh
 echo mke2fs "-O ^has_journal" -F -t ext4 -b 4096 -U "$(busybox cat "$config"/"$r_name"_uuid.txt)" '${outdir}'/'${pack_d}'.new.img >> "$config"/"$r_name"_pack_e2fsdroid.sh
@@ -601,30 +536,18 @@ real_con="/${rrrr_name}(/.*)? u:object_r:persist_data_file:s0"
 
  busybox awk '!($0 in a) {a[$0];print}' "$base_dir"/"$config"/"$r_name"_file_contexts > "$base_dir"/"$config"/"$r_name"_file_contexts.tmp && busybox mv -f "$base_dir"/"$config"/"$r_name"_file_contexts.tmp "$base_dir"/"$config"/"$r_name"_file_contexts
 
- 
  if [ "$sar" == "true" ]; then
- #echo "/system/ u:object_r:rootfs:s0" >> "$base_dir"/"$config"/${r_name}_file_contexts
  if [ -f "$base_dir"/${r_name}/system/etc/selinux/plat_file_contexts ]; then
  busybox cp "$base_dir"/${r_name}/system/etc/selinux/plat_file_contexts "$base_dir"/"$config"/${r_name}_file_contexts_orig && sed -i "s!^/!/${r_name}/!" "$base_dir"/"$config"/${r_name}_file_contexts_orig
  fi
 
  con_sar #функция для SAR
 
- #echo ".....Detected image \"System as Root\""
- 
-
  elif [ "$sar" == "false" ]; then
 
- #echo ".....Detected image not \"System as Root\""
  contet #функция для не SAR
  fi
-
- 
- #file_avb="/$nd"/"$img_name".img
  dir_avb=/data/local/UnpackerSystem/config
-
- 
- 
  q="$(busybox basename $file)"
 #echo "$q"
  file_exten_raw="$(echo "$img_name" | busybox grep -o "raw$")"
@@ -636,10 +559,6 @@ real_con="/${rrrr_name}(/.*)? u:object_r:persist_data_file:s0"
  else
  file_avb="/$nd"/"$img_name".img
  fi
- #echo "$file_avb"
- #echo "$file_exten_avb"
-
- #python39 /data/local/binary/bin_system/find_avb.py "$file_avb" "41564230000000" "$dir_avb"
 
  if busybox test ! -z "$(tune2fs -l "$file_avb" | busybox grep -o "shared_blocks")"; then
  echo
@@ -663,12 +582,8 @@ real_con="/${rrrr_name}(/.*)? u:object_r:persist_data_file:s0"
  aik_mob="2"
 
  . /data/local/binary/extract_key "$file_avb"
-
  echo 'make_ext4fs -J -T -1 -S ./file_contexts -C ./fs_config -l "$size_avb" -a /"$pack_d" "$outdir"/"$pack_d".new.img $pack_d' > "$dir_avb"/"$r_name"/"$r_name"_pack_avb.sh
- 
  echo 'make_ext4fs -s -J -T -1 -S ./file_contexts -C ./fs_config -l "$size_avb" -a /"$pack_d" "$outdir"/"$pack_d".new.img $pack_d' > "$dir_avb"/"$r_name"/"$r_name"_pack_avb_sparse.sh
- 
-
  else
  echo
  echo ".....Ошибка при создании фвйла конфигурации!"
@@ -686,10 +601,6 @@ real_con="/${rrrr_name}(/.*)? u:object_r:persist_data_file:s0"
  return
 }
  str_avb
-
-
- #. "$dir"/cap_unpak
- 
  if busybox test -s "$config"/"$r_name"*_space.txt]; then
  echo
  echo ".....В образе "${file}" есть файлы с пробелами... исправлено, сохранено в "$base_dir"/"$config"/"$r_name"_space.txt!"
@@ -703,10 +614,8 @@ real_con="/${rrrr_name}(/.*)? u:object_r:persist_data_file:s0"
  echo "...В образе "${file}" есть файлы с пробелами, исправляем..."
  echo "$h" > "$config"/"$r_name"_space.txt
  gg
- #. "$dir"/cap_unpak
 
 if [ $(echo $?) -eq 0 ] ; then
-
 echo
 echo "...Исправлено, сохранено в "$config"/"$r_name"_space.txt!"
 echo
@@ -720,10 +629,6 @@ else
  echo -e "\033[33;1m.....Успешно распаковано! \033[0m"
 echo
 fi
-
-#echo
-#echo -e "\033[33;1m.....Успешно распаковано! \033[0m"
-#echo
 else
 echo
 echo -e "\033[31;47;1m   .....error: Ошибка распаковки!              \033[0m"
