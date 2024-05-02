@@ -1,0 +1,6602 @@
+    #!/system/bin/sh
+
+  clear
+ dir="/data/local/binary"
+ export PATH=/data/local/binary:$PATH
+ #export LD_LIBRARY_PATH="/data/local/binary/lib"
+ #PS3=" =>: "
+ /data/local/binary/lib/busybox find /data/local/UnpackerSystem/gen_keys -maxdepth 1 -empty -exec busybox rm -rf {} \; 2> /dev/null
+  /data/local/binary/lib/busybox find /data/local/UnpackerSystem/extract_keys -maxdepth 1 -empty -exec busybox rm -rf {} \; 2> /dev/null
+ 
+ 
+config="config/$pack_d"
+ 
+ free_place()
+{
+ unset get_size
+ unset get_size_print
+
+ echo
+ echo
+ echo ".....Enter the desired amount of free space for the image to be built in megabytes:"
+ echo
+ read a && set -- "$a"  
+if [ $(echo $?) -eq 0 ]; then
+if busybox test "$(busybox expr "$a" \* "1" 2> /dev/null)"; then
+ get_size="$(busybox expr "$a" \* 1024 \* 1024 / 4096 \* 4096)"
+ get_size_print="$a"
+ set -- "$get_size"
+else
+ get_size="0"
+ get_size_print="0"
+ set -- "$get_size"
+fi
+else
+ echo
+ echo ".....Error!"
+ echo
+fi
+ clear
+ echo
+ echo ".....The desired amount of free space for the image being collected is set ~ "$get_size_print" mb"
+ echo
+ return
+}
+
+ nn1()
+{
+
+ echo
+ echo "     Selecting the image save folder    "
+ echo "     -----------------------------    "
+ echo
+ echo ".....When entering 0, save folder: /data/local/UnpackerSuper/output"
+ echo ".....When entering 1, save folder: /data/local/UnpackerSuper"
+ echo ".....Enter 0, 1, or your path to the image save folder..."
+ #echo "  For example: 0" 
+ #echo "  For example: /sdcard/test"
+ #echo "  example input: /storage/F960-18E7"
+ echo
+ read h && if [ "$h" = "0" ]; then
+ outdir=/data/local/UnpackerSystem
+ set -- $outdir
+ 
+            clear
+            echo
+ echo "     The output image save folder is set to:"
+ echo "     $outdir"
+ elif [ "$h" = "1" ]; then
+ outdir=/data/local/UnpackerSuper
+ set -- $outdir
+ 
+            clear
+            echo
+ echo "     The output image save folder is set to:"
+ echo "     $outdir"
+ elif [ -d "$h" ]; then
+ outdir=$h
+ set -- $outdir
+ 
+ clear
+            echo
+ echo "     The output image save folder is set to:"
+ echo "     $outdir"
+ else
+ clear
+ echo
+ echo ".....The save folder does not exist!"
+ nn
+ return
+ fi
+ return
+}
+
+inf_space_menu()
+{
+free_space="$(busybox df -h "$outdir" | busybox tail -1 |  busybox awk '{ print $(NF-2) }')"
+echo "    Free in the folder: "$free_space""
+return
+}
+
+qsn()
+{
+if [ -f /data/local/binary/path_list.txt ]; then
+ v=$(for a in $(busybox cat /data/local/binary/path_list.txt); do
+
+ echo "$a"
+     done)
+
+ set -- $v
+
+if [ ! -z "$v" ]; then
+ clear
+ echo
+ echo ".....Select the output folder from the list in the file /data/local/binary/path_list.txt: "
+ echo
+select menu in $v "/data/local/UnpackerSystem"; do
+case $REPLY in
+                 [1-9]*) i="$#"
+                        #j="$#"
+                      let i=i+1
+                      #let j=j+2
+                      file=$(echo "$@" | busybox cut -d' ' -f"$REPLY")
+         if [ ! -z "$file" -a "$REPLY" -lt "$i" ]; then
+ if [ -d "$file" ]; then
+ clear        
+outdir="$file"
+ set -- $outdir
+ 
+ else
+ clear
+ outdir="/data/local/UnpackerSystem"
+        set -- $outdir
+ echo
+ echo ".....The $file folder does not exist!"
+ fi
+         return
+         break 
+         elif [ "$REPLY" == "$i" ]; then
+         clear
+        #main_menu
+        outdir="/data/local/UnpackerSystem"
+        set -- $outdir
+        return
+        break
+        else
+        clear
+        #echo
+            #echo "      Enter the numbers corresponding to the menu."
+         outdir="/data/local/UnpackerSystem"
+        set -- $outdir
+         return
+         break
+         fi
+         break;;
+   *) clear
+        #echo
+            #echo "      Enter the numbers corresponding to the menu."
+         outdir="/data/local/UnpackerSystem"
+         set -- $outdir
+         return
+         break ;;
+  esac
+ done
+ else
+ clear
+ echo
+ echo ....."There are no paths recorded in the path_list.txt file."
+ echo
+ outdir="/data/local/UnpackerSystem"
+ set -- $outdir
+return
+fi
+else
+clear
+echo
+ echo ....."No file /data/local/binary/path_list.txt!"
+ echo
+ outdir="/data/local/UnpackerSystem"
+ set -- $outdir
+return
+fi
+return
+}
+
+
+nn()
+{
+
+ echo
+ echo "     Selecting the image save folder    "
+ echo "     -----------------------------    "
+ echo
+ #echo ".....When entering 0, save folder: /data/local/UnpackerSystem"
+ echo ".....When you press \"Enter\", the save folder is /data/local/UnpackerSystem..."
+ echo ".....When entering 0, select a folder from the list in the file /data/local/binary/path_list.txt..."
+ echo
+ echo ".....Press \"Enter\", enter 0 or your path to the image save folder..."
+ echo
+ read h && if [ "$h" = "0" ]; then
+
+ qsn #Function of selecting a folder from the list.
+ #set -- $outdir
+ #mkdir "$outdir" 2> /dev/null
+ 
+            #clear
+            echo
+ echo "    The output image save folder is set to:"
+ echo "    $outdir"
+  inf_space_menu
+ elif [ -d "$h" -o -d /"$h" -a ! -z "$h" ]; then
+ outdir=/"$(echo "$h" | busybox sed 's!^/!!')"
+ set -- $outdir
+ make_ext4fs -l 10485760 "$outdir"/testuka >/dev/null
+  if busybox test -s "$outdir"/testuka; then
+ 
+ clear
+            echo
+ echo "    The output image save folder is set to:"
+ set -- $outdir
+ echo "    $outdir"
+  inf_space_menu
+ busybox rm -f "$outdir"/testuka 2> /dev/null
+ else
+ clear
+ echo
+ echo "    \"$outdir\" not available for saving image!"
+ echo
+ echo "    The output image save folder is set to:"
+ outdir=/data/local/UnpackerSystem
+ set -- $outdir
+ mkdir "$outdir" 2> /dev/null
+ echo "    $outdir"
+  inf_space_menu
+ busybox rm -f "$outdir"/testuka 2> /dev/null
+ fi
+ else
+ clear
+ echo
+ echo "....Attention! The save folder does not exist!"
+ echo
+ echo "    The output image save folder is set to:"
+ outdir=/data/local/UnpackerSystem
+ set -- $outdir
+ mkdir "$outdir" 2> /dev/null
+ echo "    $outdir"
+  inf_space_menu
+ return
+ fi
+ return
+}
+
+ nnnnn()
+{
+
+ echo
+ echo "     Selecting the image save folder    "
+ echo "     -----------------------------    "
+ echo
+ echo ".....When entering 0, save folder: /data/local/UnpackerSystem"
+ echo ".....Enter 0, or your path to the image save folder..."
+ echo
+ read h && if [ "$h" = "0" ]; then
+ outdir=/data/local/UnpackerSystem
+ set -- $outdir
+ 
+            clear
+            echo
+ echo "     The output image save folder is set to:"
+ echo "     $outdir"
+ elif [ -d "$h" -o -d /"$h" ]; then
+ outdir=/"$(echo "$h" | busybox sed 's!^/!!')"
+ set -- $outdir
+ make_ext4fs -l 10485760 "$outdir"/testuka >/dev/null
+  #if [ $(echo $?) -eq 0 ]; then
+  if busybox test -s "$outdir"/testuka; then
+ 
+ clear
+            echo
+ echo "     The output image save folder is set to:"
+ set -- $outdir
+ echo "     $outdir"
+ busybox rm -f "$outdir"/testuka 2> /dev/null
+ else
+ clear
+ echo
+ echo "    \"$outdir\" not available for saving image!"
+ echo
+ echo "    The output image save folder is set to:"
+ outdir=/data/local/UnpackerSystem
+ set -- $outdir
+ echo "    $outdir"
+ busybox rm -f "$outdir"/testuka 2> /dev/null
+ fi
+ else
+ outdir="$h"
+ set -- $outdir
+
+ clear
+ echo
+ echo ".....Error! The save folder does not exist!"
+ nnnnn
+ return
+ fi
+ return
+}
+
+
+
+ check_status () {
+
+ make_ext4fs -s -J -T -1 -l "$i" -a /"$pack_d" tmp.img "$pack_d" &> /dev/null
+ if [ $(echo $?) -eq 0 ]; then
+ gg=1
+ return
+ else
+ gg=0
+ return
+ fi
+ return
+}
+
+ check_size_img()
+{
+ #cd /data/local/UnpackerSystem
+ echo
+ echo ".....Determining the size for assembly..."
+ echo
+
+#i="$(avbtool add_hashtree_footer --partition_size "$(busybox expr $(busybox du -s "$pack_d" | busybox awk '{ print $1 }') \* 1024)" --do_not_generate_fec --calc_max_image_size)"
+
+ i="$(busybox expr $(busybox du -s "$pack_d" | busybox awk '{ print $1 }') \* 1024)"
+
+ #i=$(busybox cat "$config"/"$pack_d"_size.txt)
+
+
+ while check_status; do
+if [ "$gg" -eq 1 ]; then
+if busybox test -s "$config"/"$pack_d"_avb.img; then
+ c="$(avbtool add_hashtree_footer --partition_size "$i" --do_not_generate_fec --calc_max_image_size)"
+ v="$(avbtool add_hashtree_footer --partition_size "$c" --do_not_generate_fec --calc_max_image_size)"
+ 
+until busybox test "$i" -lt "$v";
+ do
+ v="$(busybox expr "$v" \+ "$get_add")"
+ c="$(busybox expr "$c" \+ "$get_add")"
+ done
+ size_new="$(busybox expr "$c" / 4096 \* 4096 \+ "$get_size")"
+ else
+ size_new="$(busybox expr "$i" / 4096 \* 4096 \+ "$get_size")"
+ fi
+ busybox rm -f tmp.img
+ break
+ else
+ i="$(busybox expr "$i" \+ "$get_add")"
+ fi
+ done
+ return
+}
+
+ext_check()
+{
+ file_ext="$1"
+
+ if [ ! -z "$(busybox hexdump -C -n 20000 "$file_ext" | busybox grep -Eo '3a ff 26 ed|30 50 4c 41|4d 4f 54 4f|e2 e1 f5 e0|28 b5 2f fd' 2> /dev/null)" -o ! -z "$(busybox hexdump -C -n 2000 "$file_ext" | busybox awk '/00000430/ { print $10$11 }' | busybox grep "53ef")" -o ! -z "$(busybox hexdump -C -n 2000 "$file_ext" | busybox grep -o "[.]cms" 2> /dev/null)" ]; then
+ return 0
+ else
+ return 1
+ fi
+ return
+}
+
+ ext_checkkk()
+{
+ file_ext="$1"
+
+ if [ ! -z "$(busybox hexdump -C -n 2000 "$file_ext" | busybox grep '3a ff 26 ed')" -o ! -z "$(busybox hexdump -C -n 2000 "$file_ext" | busybox awk '/00000430/ { print $10$11 }' | busybox grep "53ef")" -o ! -z "$(busybox hexdump -C -n 20000 "$file_ext" | busybox grep -o "30 50 4c 41")" -o ! -z "$(busybox hexdump -C -n 20000 "$file_ext" | busybox grep -o "4d 4f 54 4f" 2> /dev/null)" -o ! -z "$(busybox hexdump -C -n 2000 "$file_ext" | busybox grep -o "[.]cms" 2> /dev/null)" ]; then
+ return 0
+ else
+ return 1
+ fi
+ return
+}
+
+
+ ext_check_super()
+{
+ file_ext="$1"
+if [ ! -z "$(busybox hexdump -C -n 2000 "$file_ext" | busybox grep '3a ff 26 ed')" -o ! -z "$(busybox hexdump -C -n 2000 "$file_ext" | busybox awk '/00000430/ { print $10$11 }' | busybox grep "53ef")" ]; then
+ return 0
+ else
+ return 1
+ fi
+ return
+}
+
+ check_mount()
+{
+ [ -z "$(busybox mount | busybox grep "/data/local" | busybox grep -vi "AIK")" ] && return 0 || return 1
+}
+ 
+
+my_size_add()
+{
+ clear
+ real_size_orig="$(cat "$config"/"$pack_d"_size.txt)"
+ real_size_orig_mb=$(busybox expr "$real_size_orig" / 1024 / 1024)
+ echo
+ echo ".....Original image size ~ "$real_size_orig_mb" mb"
+ echo ".....Enter the size in mb you want to add to the image:"
+ echo
+ read a && set -- "$a"  
+ if [ $(echo $?) -eq 0 ]; then
+ #real_size_orig="$(cat "$config"/"$pack_d"_size.txt)"
+ #real_size_orig_mb=$(busybox expr "$real_size_orig" / 1024 / 1024)
+ size_add=$(busybox expr "$a" \* 1024 \* 1024 / 4096 \* 4096)
+r_size=$(busybox expr "$real_size_orig" + "$size_add")
+real_size=$(busybox expr "$r_size" / 1024 / 1024)
+ set -- "$r_size"
+
+ fff_add
+ return
+ echo
+ else
+ echo
+ echo ".....Error!"
+ echo
+ my_size_add
+ return
+ fi
+ return
+}
+
+ fff_add()
+{
+ clear
+  if [ "$r_size" != 0 ]; then
+ echo
+ echo "...Original image size ~ "$real_size_orig_mb" mb"
+ echo "...Collect image with size ~ ${real_size} mb?"
+ echo
+ #else
+ #echo
+ #echo "...The entered size is not a multiple \"4096\", Collect image with size: $r_size byte?"
+ #echo
+ fi
+ select img in "Yes" "No, enter another size" "Exit to main menu"; do
+ case $REPLY in 
+         1 ) set -- "$r_size"
+             if [ ! -s "$config"/"$pack_d"*_avb.img ]; then
+    #set -- "$b"
+    #busybox cp -f "$config"/"$pack_d"*_avb.img "$config"/"$pack_d"_myavb.img
+      #cat $file_sh > "$config"/"$pack_d"_gsize.sh
+            #else
+        busybox sed -e "s!-l [0-9]*!-l "$r_size"!" $file_sh > "$config"/"$pack_d"_gsize.sh
+              fi
+              . $file_size
+               main_menu
+               break ;;
+         2 ) clear
+               my_size_add
+               return
+               break ;;
+         3 ) clear
+               main_menu
+               return
+               break ;;
+         * ) clear
+             echo
+             echo "      Enter the numbers corresponding to this menu."
+              fff_add
+              return
+              break ;;
+    esac
+done
+return
+}
+
+ my_size()
+{
+ clear
+ echo
+ echo ".....Enter the size in bytes:"
+ echo
+ read a && set -- "$a"  
+ if [ $(echo $?) -eq 0 ]; then
+ r_size=$(busybox expr "$a" / 4096 \* 4096)
+ set -- "$r_size"
+
+ fff
+ return
+ echo
+ else
+ echo
+ echo ".....Error!"
+ echo
+ my_size
+ return
+ fi
+ return
+}
+
+ fff()
+{
+ clear
+  if [ "$a" = "$r_size" ]; then
+ echo
+ echo "...Collect image with size: $r_size byte?"
+ echo
+ else
+ echo
+ echo "...The entered size is not a multiple \"4096\", Collect image with size: $r_size byte?"
+ echo
+ fi
+ select img in "Yes" "No, enter another size" "Exit to main menu"; do
+ case $REPLY in 
+         1 ) set -- "$r_size"
+             if [ ! -s "$config"/"$pack_d"*_avb.img ]; then
+    #set -- "$b"
+    #busybox cp -f "$config"/"$pack_d"*_avb.img "$config"/"$pack_d"_myavb.img
+      #cat $file_sh > "$config"/"$pack_d"_gsize.sh
+            #else
+        busybox sed -e "s!-l [0-9]*!-l "$r_size"!" $file_sh > "$config"/"$pack_d"_gsize.sh
+              fi
+              . $file_size
+               main_menu
+               break ;;
+         2 ) clear
+               my_size
+               return
+               break ;;
+         3 ) clear
+               main_menu
+               return
+               break ;;
+         * ) clear
+             echo
+             echo "      Enter the numbers corresponding to this menu."
+              fff
+              return
+              break ;;
+    esac
+done
+return
+}
+
+
+   pack_dat()
+{
+ cd /data/local/UnpackerSystem
+ dir=/data/local/binary
+ d=$(for a in $(busybox find -maxdepth 1 ! -name "." -type d | sed 's!./!!'); do
+ if [ -f "config/"$a"/"$a"_file_contexts" ]; then
+ echo "$a"
+ fi
+ done)
+
+ set -- $d
+
+ if [ ! -z "$d" ]; then
+ echo
+ echo ".....Select the build folder:"
+ echo
+ select menu in $d "Exit to main menu"; do
+case $REPLY in
+                [1-9]*) i="$#"
+
+ let i=i+1
+
+ file=$(echo "$@" | busybox cut -d' ' -f"$REPLY")
+ if [ ! -z "$file" -a "$REPLY" -lt "$i" ]; then
+ clear
+ pack_d="$file"
+ config="config/$pack_d"
+ 
+ size=100
+ #. ${dir}/pack_img_dat
+ . $file_size
+ main_menu
+ return
+ break
+ elif [ "$REPLY" -eq "$i" ]; then
+ clear
+ main_menu
+ return
+ break
+ else
+ clear
+ echo
+ echo " Enter the numbers corresponding to the menu."
+ pack_dat
+ return
+ break
+ fi
+ break;;
+ *) clear
+ echo
+ echo " Enter the numbers corresponding to the menu."
+ pack_dat
+ return
+ break;;
+ esac
+ done
+ else
+ clear
+ echo
+ echo ....."In \"$PWD\" there are no build folders available."
+ echo
+ main_menu
+ return
+fi
+return
+}
+
+  pack_dat_my()
+{
+ cd /data/local/UnpackerSystem
+ dir=/data/local/binary
+ d=$(for a in $(busybox find -maxdepth 1 ! -name "." -type d | busybox sed 's!./!!'); do
+ if [ -f "config/"$a"/"$a"_file_contexts" ]; then
+ echo "$a"
+ fi
+ done)
+
+ set -- $d
+
+ if [ ! -z "$d" ]; then
+ echo
+ echo ".....Select the build folder:"
+ echo
+ select menu in $d "Exit to main menu"; do
+case $REPLY in
+                [1-9]*) i="$#"
+
+ let i=i+1
+
+ file=$(echo "$@" | busybox cut -d' ' -f"$REPLY")
+ if [ ! -z "$file" -a "$REPLY" -lt "$i" ]; then
+ clear
+ pack_d="$file"
+ config="config/$pack_d"
+ 
+ size=111
+ set -- $size
+ if [ -f ./"$config"/"$pack_d"*_avb.img ]; then
+         file_sh=./"$config"/"$pack_d"*_pack_avb_sparse.sh
+        else
+         file_sh=./"$config"/"$pack_d"*_pack_sparse.sh
+          fi
+ #file_size=${dir}/pack_img_dat
+ if [ "$size_add" == "1" ]; then
+     my_size_add
+ else
+ my_size
+ fi
+ return
+
+ main_menu
+ return
+ break
+ elif [ "$REPLY" -eq "$i" ]; then
+ clear
+ main_menu
+ return
+ break
+ else
+ clear
+ echo
+ echo " Enter the numbers corresponding to the menu."
+ pack_dat_my
+ return
+ break
+ fi
+ break;;
+ *) clear
+ echo
+ echo " Enter the numbers corresponding to the menu."
+ pack_dat_my
+ return
+ break;;
+ esac
+ done
+ else
+ clear
+ echo
+ echo ....."In \"$PWD\" there are no build folders available."
+ echo
+ main_menu
+ return
+fi
+return
+}
+
+
+  pack_dat_new()
+{
+ 
+  free_place
+  
+ cd /data/local/UnpackerSystem
+ dir=/data/local/binary
+ d=$(for a in $(busybox find -maxdepth 1 ! -name "." -type d | busybox sed 's!./!!'); do
+ if [ -f "config/"$a"/"$a"_file_contexts" ]; then
+ echo "$a"
+ fi
+ done)
+
+ set -- $d
+
+ if [ ! -z "$d" ]; then
+ echo
+ echo ".....Select the build folder:"
+ echo
+ select menu in $d "Collect all images" "Exit to main menu" "Exit"; do
+case $REPLY in
+ [1-9]*) i="$#"
+        j="$#"
+        e="$#"
+
+ let i=i+1
+ let j=j+2
+ let e=e+3
+ 
+
+ file=$(echo "$@" | busybox cut -d' ' -f"$REPLY")
+ if [ ! -z "$file" -a "$REPLY" -lt "$i" ]; then
+ clear
+ pack_d="$file"
+ config="config/$pack_d"
+ 
+ size_orig="$(busybox expr $(busybox du -s "$pack_d" | busybox awk '{ print $1 }') \* 1024)"
+ size_real="$(busybox cat "$config"/"$pack_d"_size.txt)"
+if busybox test "$size_orig" -le "10485760"; then
+ get_add="8192"
+  check_size_img
+ #size_new="$(busybox expr "$size_orig" \* 109 / 105 / 4096 \* 4096)"
+else
+ get_add="1048576"
+ check_size_img
+ #size_new="$(busybox expr "$size_orig" \* 12 / 11 / 4096 \* 4096)"
+  fi
+                    size=111
+                    set -- $size
+                   r_size="$size_new"
+                   set -- $r_size
+                    #file_size=${dir}/pack_img_dat
+         if busybox test -s ./"$config"/"$pack_d"*_avb.img; then
+         file_sh=./"$config"/"$pack_d"*_pack_avb_sparse.sh
+        else
+         file_sh=./"$config"/"$pack_d"*_pack_sparse.sh
+         busybox sed -e "s!-l [0-9]*!-l "$r_size"!" $file_sh > "$config"/"$pack_d"_gsize.sh
+          fi
+              . $file_size
+          main_menu
+     return
+ break
+ elif [ "$REPLY" -eq "$i" ]; then
+
+ clear
+ for br_pack in "$@"; do
+ check_dat="222"
+ pack_d="$br_pack"
+ config="config/$pack_d"
+ 
+ size_orig="$(busybox expr $(busybox du -s "$pack_d" | busybox awk '{ print $1 }') \* 1024)"
+ size_real="$(busybox cat "$config"/"$pack_d"_size.txt)"
+if busybox test "$size_orig" -le "10485760"; then
+ get_add="8192"
+  check_size_img
+ #size_new="$(busybox expr "$size_orig" \* 109 / 105 / 4096 \* 4096)"
+else
+ get_add="1048576"
+ check_size_img
+ #size_new="$(busybox expr "$size_orig" \* 12 / 11 / 4096 \* 4096)"
+  fi
+                    size=111
+                    set -- $size
+                   r_size="$size_new"
+                   set -- $r_size
+                    #file_size=${dir}/pack_img_dat
+         if busybox test -s ./"$config"/"$pack_d"*_avb.img; then
+         file_sh=./"$config"/"$pack_d"*_pack_avb_sparse.sh
+        else
+         file_sh=./"$config"/"$pack_d"*_pack_sparse.sh
+         busybox sed -e "s!-l [0-9]*!-l "$r_size"!" $file_sh > "$config"/"$pack_d"_gsize.sh
+          fi
+              . $file_size
+              sleep 3
+  done
+ main_menu
+ return
+ break
+elif [ "$REPLY" -eq "$j" ]; then
+ clear
+ main_menu
+ return
+ break
+elif [ "$REPLY" -eq "$e" ]; then
+ clear
+ return
+ break
+ else
+ clear
+ echo
+ echo " Enter the numbers corresponding to the menu."
+ pack_dat_new
+ return
+ break
+ fi
+ break;;
+ *) clear
+ echo
+ echo " Enter the numbers corresponding to the menu."
+ pack_dat_new
+ return
+ break;;
+ esac
+ done
+ else
+ clear
+ echo
+ echo ....."In \"$PWD\" there are no build folders available."
+ echo
+ main_menu
+ return
+fi
+return
+}
+
+ main_menu(){
+ echo -en "\E[32;1m"
+ MENU=(       "Menu: Extract file_contexts"
+             "Menu: AIK-mobile Repacking boot(recovery).img"
+             "Menu: Unpacking .img"
+             "Menu: Mounting raw images *.img"
+             "Menu: Unpacking .dat"
+             "Menu: Unpacking .br"
+             "Menu: Build .img"
+             "Menu: Build and convert to .dat"
+             "Menu: Build and convert to .br"
+             "Menu: Conversion sparse > raw; raw > sparse"
+             "Menu: Other Tools"
+             "Menu: Clean up work folders"
+             "Menu: Uninstall \"Unpacker Kitchen for Android\""
+             "Exit"
+)
+echo
+echo "               Main Menu:                "
+echo "      Version 5.28 (Ghost Edition)       "
+echo "       Full English By @CyberGhost       "
+echo "   ------------------------------------- "
+echo
+echo "Enter the number corresponding to the desired action:"
+echo
+echo -en "\E[37;1m"
+
+select menu in "${MENU[@]}"; do
+    case $REPLY in
+         1) clear
+            my1(){
+            echo
+            echo "      Menu: Extract file_contexts"
+             echo
+             echo "     Put boot.img in the folder: /data/local/UnpackerContexts"
+             echo
+select img in "Extract file_contexts" "Convert file_contexts(txt) -> file_contexts(bin)(version:8.38)" "Setting the configuration" "Exit to main menu" "Exit"; do
+case $REPLY in 
+         1 ) clear
+             bootext
+             main_menu
+             break ;;
+         2 ) clear
+             cd /data/local/UnpackerContexts
+             if [ -f ./file_contexts ]; then
+             $dir/sefcontext_compile -o ./file_contexts_new.bin ./file_contexts
+             if [ $(echo $?) -eq 0 ] ; then
+echo
+echo ".....Successfully created file_contexts_new.bin!"
+echo
+else
+echo
+echo ".....error: Error during conversion!"
+echo
+fi
+else
+echo 
+echo ".....In the folder No file: file_contexts!"
+echo
+fi
+             cd
+             main_menu
+             break ;;
+         3 ) clear
+             /data/local/binary/install_sef.sh
+             main_menu
+             break ;;
+         4 ) clear
+             main_menu
+             break ;;
+         5 ) clear
+             break ;;
+          *) echo "Enter the number corresponding to the Menu items: Extract file_contexts." ;;
+    esac
+done
+}
+my1
+break ;;
+         2) clear
+             my_aik(){
+             if [ -d /data/local/AIK-mobile ]; then
+            cd /data/local/AIK-mobile
+             echo
+             echo "         Menu: AIK-mobile"
+             echo
+             echo "    Put boot.img in the folder: /data/local/AIK-mobile"
+             echo
+select img in "Unpack boot(recovery)" "Pack boot(recovery)" "Remove AVB/dm-verity" "Patch boot.img(32bit, SAR) for magisk" "Cleaning working folder: /data/local/AIK-mobile" "Full removing AIK-mobile from your phone" "Exit to main menu" "Exit"; do
+case $REPLY in 
+         1 ) clear
+             aik_mob="1"
+             my_sel_boot(){
+ aik_avb()
+{
+ avb_file="$1"
+ avb_dir=/data/local/AIK-mobile/split_img
+ if [ -d "$avb_dir" ]; then
+ avb_full="$(avbtool info_image --image "$avb_file" 2> "$avb_dir"/avb.log)"
+ if [ ! -z "$(echo "$avb_full" | busybox grep -o "Image size:")" ]; then
+ 
+ echo "$avb_full" | busybox awk '/Partition Name:/ { print $3 }' > "$avb_dir"/part_name.txt
+ echo "$avb_full" > "$avb_dir"/avb.img
+ echo "$avb_full" | busybox awk '/Image size:/ { print $3 }' | busybox head -1 > "$avb_dir"/avb_size.txt
+ 
+ echo
+ echo ".....AVB structure detected!"
+ fi
+ fi
+return
+}
+cd /data/local/AIK-mobile
+b=$(busybox find . -maxdepth 1 -name '*.img' -o -name '*.sin' -o -name '*.elf' -o -name '*.bin' -o -name '*.win' -o -name '*.lz4' -o -name '*.PARTITION' -type f)
+
+set -- $b
+
+if [ ! -z "$b" ]; then
+echo
+echo ".....Select file to unpack:"
+echo
+select menu in $b "Exit to Menu: AIK-mobile"; do
+case $REPLY in
+    [1-9]*) i="$#"
+                      let i=i+1
+                      file=$(echo "$@" | busybox cut -d' ' -f"$REPLY")
+         if [ ! -z "$file" -a "$REPLY" -lt "$i" ]; then
+         clear
+         outfile=$(echo "$file" | busybox awk -F".lz4" '{ print $1 }')
+         if [ ! -z "$(echo "$file" | busybox grep -o '.lz4$')" ]; then
+         lz4 -df "$file"
+         ./unpackimg.sh "$outfile" && aik_avb "$outfile"
+
+
+         elif [ ! -z "$(echo "$file" | busybox grep ".sin$")" ]; then
+        name_sin="$(echo "$file" | busybox sed 's!\.sin$!!')"
+        sony_dump "$PWD" "$file" | tee "$name_sin"_sin.log
+
+        if [ $(echo $?) -eq 0 ]; then
+     [ -f "$name_sin"_sin.log ] && u="$(busybox cat "$name_sin"_sin.log | busybox awk '/Extracting file/ { print $3 }' | busybox tail -1)" 
+num=${u##*/}
+       busybox mv -f "$num" "$name_sin"_sin.img && ./unpackimg.sh "$name_sin"_sin.img && aik_avb "$name_sin"_sin.img
+          
+         fi
+
+         else
+         ./unpackimg.sh "$file" && aik_avb "$file" && . /data/local/binary/extract_key "$file"
+         fi
+         main_menu
+         return
+         break 
+         elif [ "$REPLY" == "$i" ]; then
+         clear
+        my_aik
+        return
+        break
+        else
+        clear
+        echo
+            echo "      Enter the numbers corresponding to the menu."
+         my_sel_boot
+         return
+         break
+         fi
+         break;;
+      *) clear
+         echo
+            echo "      Enter the numbers corresponding to the menu."
+         my_sel_boot
+         return
+         break;;
+  esac
+ done
+ else
+ echo
+ echo ....."there is no files in the folder to unpack."
+ echo
+ my_aik
+ return
+ fi
+return
+}
+ my_sel_boot
+ break
+             my_aik
+             break ;;
+         2 ) clear
+ aik_pack()
+ {
+ pack_file="$(echo "$1" | busybox sed 's!./!!')"
+ #pack_file="$1"
+ avb_dir=/data/local/AIK-mobile/split_img
+ if busybox test -s "$avb_dir"/avb.img; then
+ size_orig="$(busybox cat "$avb_dir"/avb_size.txt)"
+ part_name="$(busybox cat "$avb_dir"/part_name.txt)"
+ prop_avb="$(busybox cat "$avb_dir"/avb.img | busybox awk '/    Prop:/ { print "--prop"" "$2":"$4 }' | tr '\n' ' ')"
+ 
+ check_alg="$(busybox cat "$avb_dir"/avb.img | busybox awk '/^Algorithm:/ { print $2 }')"
+
+#if [ "$check_alg" != "NONE" -a ! -z "$check_alg" ]; then
+# if [ "$check_alg" == "SHA256_RSA2048" ]; then
+# sign_file="--key /data/local/binary/testkey_rsa2048.pem"
+# sign_print="--algorithm $check_alg"
+# elif [ "$check_alg" == "SHA256_RSA4096" ]; then
+ #sign_file="--key /data/local/binary/testkey_rsa4096.pem"
+# sign_print="--algorithm $check_alg"
+ 
+ #elif [ "$check_alg" == "SHA256_RSA8192" ]; then
+ #sign_file="--key /data/local/binary/testkey_rsa8192.pem"
+# sign_print="--algorithm $check_alg"
+# fi
+ #fi
+
+
+if [ "$check_alg" != "NONE" -a ! -z "$check_alg" ]; then
+ case "$check_alg" in
+   "SHA256_RSA2048" ) sign_file="--key /data/local/binary/testkey_rsa2048.pem"
+ sign_print="--algorithm $check_alg" ;;
+   "SHA256_RSA4096" ) sign_file="--key /data/local/binary/testkey_rsa4096.pem"
+ sign_print="--algorithm $check_alg" ;;
+ 
+   "SHA256_RSA8192" ) sign_file="--key /data/local/binary/testkey_rsa8192.pem"
+ sign_print="--algorithm $check_alg" ;;
+ esac
+fi
+
+
+ echo "avbtool add_hash_footer --image "$pack_file" --partition_size "$size_orig" "$prop_avb"--partition_name "$part_name" "$sign_print" "$sign_file"" > "$avb_dir"/avb.sh
+ #chmod 755 "$avb_dir"/avb.sh && "$avb_dir"/avb.sh && busybox rm -f "$avb_dir"/avb.sh
+ chmod 755 "$avb_dir"/avb.sh && "$avb_dir"/avb.sh
+ if [ $(echo $?) -eq 0 ]; then
+ echo
+ echo ".....Minimal AVB structure created!"
+ 
+ r="$(busybox realpath "$pack_file")"
+ nd=${r%/*}
+
+ . /data/local/binary/remove_key "$pack_file" "$avb_dir"/*_pubkey.pem
+ else
+ echo
+ echo ".....Error creating AVB structure!"
+ fi
+ else
+ size_img="$(busybox cat "$avb_dir"/*-origsize 2> /dev/null)"
+ if [ ! -z "$size_img" ]; then
+
+ size_mb="$(busybox expr "$size_img" / 1024 / 1024)"
+ fi
+ if [ ! -z "$(echo "$size_mb" | busybox grep -Eow "6|16|32|35|40|54|64|96|100|128")" ]; then
+ size_orig="$(busybox expr "$size_mb" \* 1024 \* 1024)"
+ if busybox test "$size_img" -eq "$size_orig"; then
+ busybox truncate -s "$size_orig" "$pack_file" 2> /dev/null
+ fi
+ fi
+ fi
+ return
+}
+             ./repackimg.sh
+              if [ -d ./split_img ]; then
+              cd /data/local/AIK-mobile/split_img
+check_name_obraz="$(ls | busybox grep -Eoi 'boot|twrp|recovery|magisk|cwm' | busybox head -1)"
+case "$check_name_obraz" in
+              "boot" )  cd ..
+                           busybox mv -f ./image-new.img ./boot-output.img && aik_pack ./boot-output.img ;;
+ twrp|recovery|cwm )  cd ..
+                        busybox mv -f ./image-new.img ./recovery-output.img && aik_pack ./recovery-output.img ;;
+            "magisk" )  cd ..
+                                 busybox mv -f ./image-new.img ./magisk-output.img && aik_pack ./magisk-output.img ;;
+                    * )  cd ..
+                                 busybox mv -f ./image-new.img ./unknown-output.img && aik_pack ./unknown-output.img ;;
+esac
+fi
+
+             my_aik
+             break ;;
+
+         3 ) clear
+             rr()
+{
+file="$1"
+busybox rm -rf path
+mkdir path && cd path
+bootpatch unpack ../$file 2> ../path_dtb.txt
+if [ "$?" -eq "0" ]; then
+echo >> ../path_dtb.txt
+
+#echo
+#echo "...Looking for values for the patch..."
+clear
+for file_path in $(busybox find -maxdepth 1 -name "*dtb"); do
+[ -f $file_path ] && echo
+echo "...Finding values for a patch in a file: $(echo $file_path | busybox sed "s!./!!")..." && /data/local/binary/bootpatch dtb $file_path patch &>> ../path_dtb.txt
+done
+if [ ! -z "$(busybox cat ../path_dtb.txt | busybox grep ".*,avb")" ]; then
+echo >> ../path_dtb.txt
+bootpatch repack ../$file 2>> ../path_dtb.txt && busybox cp new-boot.img ../boot_noavb.img && busybox rm -rf ../path
+#echo >> ../path_dtb.txt
+echo
+echo "...Completed successfully, received file: \"boot_noavb.img\"!"
+echo
+main_menu
+return
+else
+echo
+echo "...No values for patch!"
+echo
+busybox rm -rf ../path
+main_menu
+return
+fi
+else
+echo
+echo "...Error during unpacking!"
+busybox rm -rf ../path
+ main_menu
+ return
+ fi
+}
+
+
+             clear_dm(){
+
+cd /data/local/AIK-mobile
+b=$(busybox find . -maxdepth 1 -name '*.img' -o -name '*.sin' -o -name '*.elf' -o -name '*.bin' -o -name '*.lz4' -type f)
+
+set -- $b
+
+if [ ! -z "$b" ]; then
+echo
+echo ".....Choose File:"
+echo
+select menu in $b "Exit to Menu: AIK-mobile"; do
+case $REPLY in
+    [1-9]*) i="$#"
+                      let i=i+1
+                      file=$(echo "$@" | busybox cut -d' ' -f"$REPLY")
+         if [ ! -z "$file" -a "$REPLY" -lt "$i" ]; then
+         clear
+         outfile=$(echo "$file" | busybox awk -F".lz4" '{ print $1 }')
+         if [ ! -z "$(echo "$file" | busybox grep -o '.lz4$')" ]; then
+         lz4 -df "$file"
+         rr "$outfile"
+         return
+         else
+         rr "$file"
+         return
+         fi
+         main_menu
+         return
+         break 
+         elif [ "$REPLY" == "$i" ]; then
+         clear
+        my_aik
+        return
+        break
+        else
+        clear
+        echo
+            echo "      Enter the numbers corresponding to the menu."
+         clear_dm
+         return
+         break
+         fi
+         break;;
+      *) clear
+         echo
+            echo "      Enter the numbers corresponding to the menu."
+         clear_dm
+         return
+         break;;
+  esac
+ done
+ else
+ echo
+ echo ....."there is no files for patching in the folder."
+ echo
+ my_aik
+ return
+ fi
+return
+}
+ clear_dm
+    break
+
+              my_aik
+              break ;;
+         4 ) clear
+            ker_path(){
+
+cd /data/local/AIK-mobile
+b=$(busybox find . -maxdepth 1 -name '*.img' -type f)
+
+set -- $b
+
+if [ ! -z "$b" ]; then
+echo
+echo ".....Choose File:"
+echo
+select menu in $b "Exit to Menu: AIK-mobile"; do
+case $REPLY in
+                     [1-9]*) i="$#"
+                      let i=i+1
+                      file=$(echo "$@" | busybox cut -d' ' -f"$REPLY")
+         if [ ! -z "$file" -a "$REPLY" -lt "$i" ]; then
+         clear
+       ker_name="$(echo "$file" | busybox sed 's!^./!!' | busybox awk -F".img" '{ print $1 }')"
+       file="$ker_name".img
+       file1="$ker_name"_path.img
+       busybox cp -f "$file" "$file1"
+       echo
+       python31 /data/local/binary/bin_system/main.py "$file1" 2> ker.txt
+         if [ $(echo $?) -eq 0 ] ; then
+        echo
+        echo ".....Successfully navigated $file -> $file1"
+        echo
+        else
+        echo
+        busybox cat ker.txt | busybox grep "Exception:"
+        busybox rm -f "$file1"
+        echo
+        fi
+        busybox rm -f ker.txt
+         my_aik
+         return
+         break 
+         elif [ "$REPLY" == "$i" ]; then
+         clear
+        my_aik
+        return
+        break
+        else
+        clear
+        echo
+            echo "      Enter the numbers corresponding to the menu."
+         ker_path
+         return
+         break
+         fi
+         break;;
+      *) clear
+         echo
+            echo "      Enter the numbers corresponding to the menu."
+         ker_path
+         return
+         break;;
+  esac
+ done
+ else
+ echo
+ echo ....."there is no files for patching in the folder."
+ echo
+ my_aik
+ return
+ fi
+return
+}
+ ker_path
+  break
+            my_aik
+              break ;;
+         5 ) clear
+             ./cleanup.sh
+              my_aik
+              break ;;
+         6 ) clear
+             del_aik()
+{
+echo
+echo -en "\E[31;47;1m"
+echo "     Remove AIK-mobile from your phone?     "
+echo
+echo -en "\E[37;0m"
+echo -en "\E[37;1m"
+select img in "Yes" "No" "Exit to main menu"; do
+case $REPLY in 
+         1 ) clear
+               /data/local/AIK-mobile/cleanup.sh
+ /data/local/AIK-mobile/bin/aik --uninstall
+ busybox mount -o rw,remount / 2> /dev/null
+ busybox mount -o rw,remount /system 2> /dev/null
+              busybox find $(echo $PATH | busybox sed 's!:! !g') -name 'aik' -type f | xargs busybox rm -f 2> /dev/null
+ busybox rm -rf /data/local/AIK-mobile /data/adb/modules/aik-mobile 2> /dev/null
+
+if [ $(echo $?) -eq 0 ]; then
+echo
+echo "     AIK-mobile has been successfully removed!"
+echo
+fi
+               main_menu
+               break ;;
+         2 ) clear
+               main_menu
+               break ;;
+         3 ) clear
+              main_menu
+               break ;;
+         *) clear
+            echo
+            echo "      Enter the numbers corresponding to this menu."
+              del_aik
+              break ;;
+    esac
+done
+return
+}
+del_aik
+break ;;
+         7 ) clear
+              main_menu
+              break;;
+         8 ) clear
+             break ;;
+         *) echo
+            echo "     Enter the number corresponding to the Menu items: AIK-mobile" ;;
+    esac
+done
+ else
+ echo
+#echo -en "\E[31;47;1m"
+echo ".....AIK-mobile is not installed!"
+ echo
+#echo -en "\E[37;0m"
+#echo -en "\E[37;1m"
+
+ main_menu
+ return
+ fi
+ return
+}
+my_aik
+break ;;
+         3) clear
+
+             my_system()
+{
+             cd /data/local/UnpackerSystem
+             
+ #clear
+ dir_dat=/data/local/binary
+ #b=/data/local/UnpackerSuper
+ #nd=$(echo $b | busybox awk '{ print $2 }' | busybox sed 's!^/!!')
+ v=$(for a in $(busybox find . -maxdepth 1 -name '*.img' -type f | busybox sed 's!./!!'); do
+    
+  ext_check "$a"
+
+     if [ $(echo $?) -eq 0 ]; then
+       echo "$a"
+     fi
+     done)
+
+ set -- $v
+
+ if [ ! -z "$v" ]; then
+ echo
+ echo ".....We are in the folder: /$nd"
+ echo ".....Select file to unpack:"
+ echo
+ select menu in $v "Exit to main menu"; do
+ case $REPLY in
+    [1-9]*) i="$#"
+                      let i=i+1
+                      file=$(echo "$@" | busybox cut -d' ' -f"$REPLY")
+         if [ ! -z "$file" -a "$REPLY" -lt "$i" ]; then
+         clear
+         file=/"$nd"/"$file"
+         . ${dir_dat}/unpack_img
+         main_menu
+         return
+         break
+         elif [ "$REPLY" -eq "$i" ]; then
+         clear
+        main_menu
+        return
+        break
+        else
+        clear
+        echo
+            echo "      Enter the numbers corresponding to the menu."
+         my_system
+         return
+         break
+         fi
+         break;;
+      *) clear
+         echo
+            echo "      Enter the numbers corresponding to the menu."
+         my_system
+         return
+         break;;
+  esac
+ done
+ else
+ echo
+ echo ".....In the folder: /$nd there are no \".img\" images for unpacking."
+ echo
+ main_menu
+return
+ fi
+return
+}
+
+ my_sin()
+{
+if [ ! -z "$(echo "$file" | busybox grep ".sin$")" ]; then
+        
+        name_sin="$(busybox basename ${file%.*})"
+         
+        sony_dump "$PWD" "$file"
+        if [ $(echo $?) -eq 0 ]; then
+      num="$(busybox find -maxdepth 1 | busybox grep -Ev ".sin$|.crt$|.img$|.log$" | busybox grep "$name_sin")"
+       busybox mv -f "$num" "$name_sin"_sin.img && file=/"$nd"/"$name_sin"_sin.img
+
+       ext_check "$file"
+       
+    if [ "$(echo $?)" -eq "0" ]; then
+      
+      . ${dir_dat}/unpack_img
+      else
+      echo
+         echo ".....Conversion completed successfully!"
+         echo ".....File received $file"
+         echo
+      echo "...The file is of zero size or an unsupported format, further unpacking is impossible!"
+      echo
+     fi
+         fi
+          else
+        ext_check "$file"
+         if [ "$(echo $?)" -eq "0" ]; then
+        . ${dir_dat}/unpack_img
+        else
+     echo
+     echo "...The file is of zero size or an unsupported format, further unpacking is impossible!"
+      echo
+         fi
+         fi
+  return
+}
+qqq()
+       {
+       free_space="$(busybox df -h "$PWD" | busybox tail -1 |  busybox awk '{ print $(NF-2) }')"
+ free_data="$(busybox df -h /data | busybox tail -1 |  busybox awk '{ print $(NF-2) }')"
+ #echo "...In /${nd} free: $free_space"
+ echo -e "\033[33;1m...In /${nd} free: $free_space \033[0m"
+ if [ "$free_space" != "$free_data" ]; then
+ #echo "...In /data freely: $free_data"
+ echo -e "\033[33;1m...In /data freely: $free_data \033[0m"
+ fi
+return
+}
+
+             my_super()
+{
+
+   dir_dat=/data/local/binary
+            
+   if [ "$nd" == "data/local/UnpackerSystem" ]; then
+   cd /"$nd" && echo "$nd" > "$dir_dat"/last.txt
+   elif [ "$nd" == "data/local/UnpackerSuper" ]; then
+   cd /"$nd" && echo "$nd" > "$dir_dat"/last.txt
+  elif [ "$nd" == "data/local/UnpackerPayload" ]; then
+   cd /"$nd" && echo "$nd" > "$dir_dat"/last.txt
+   elif [ "$nd" == "data/local/UnpackerSystem/uka_backup" -a -d /"$nd" ]; then
+   cd /"$nd" && echo "$nd" > "$dir_dat"/last.txt
+   elif [ "$nd" == "data/local/UnpackerQfil" -a -d /"$nd" ]; then
+   cd /"$nd" && echo "$nd" > "$dir_dat"/last.txt
+   elif [ "$nd" == "$(busybox cat "$dir_dat"/last.txt 2> /dev/null)" -a -d /"$nd" ]; then
+   cd /"$nd" && echo "$nd" > "$dir_dat"/last.txt
+   fi
+             
+ #dir_dat=/data/local/binary
+ #b=/data/local/UnpackerSuper
+ #nd=$(echo $b | busybox awk '{ print $2 }' | busybox sed 's!^/!!')
+
+ echo
+ echo ".....Search for images..."
+ v=$(busybox find . -maxdepth 1 -name '*.img' -o -name '*.zst' -o -name '*.PARTITION' -type f -o -name '*.sin' -o -name '*.win' -type f | busybox sed 's!./!!' | while read a; do
+    
+  ext_check $a
+
+     if [ $(echo $?) -eq 0 ]; then
+       echo "$a"
+     fi
+     done)
+
+set -- $v
+
+ if [ ! -z "$v" -a "$PWD" == "/$nd" -a "$PWD" != "/" ]; then
+ clear
+ free_space="$(busybox df -h "$PWD" | busybox tail -1 |  busybox awk '{ print $(NF-2) }')"
+ free_data="$(busybox df -h /data | busybox tail -1 |  busybox awk '{ print $(NF-2) }')"
+ echo
+ echo "...We are in the folder: /$nd"
+ echo "...In /${nd} free: $free_space"
+ if [ "$free_space" != "$free_data" ]; then
+ echo "...In /data freely: $free_data"
+ fi
+ 
+
+ echo
+ echo ".....Select file to unpack:"
+ echo
+ select menu in $v "Unpack all images" "Exit to main menu" "Exit"; do
+ case $REPLY in
+                   [1-9]*) i="$#"
+                      j="$#"
+                      e="$#"
+                      let i=i+1
+                      let j=j+2
+                      let e=e+3
+                      #let i=i+1
+                      file=$(echo "$@" | busybox cut -d' ' -f"$REPLY")
+         if [ ! -z "$file" -a "$REPLY" -lt "$i" ]; then
+         clear
+         file=/"$nd"/"$file"
+       my_sin
+         main_menu
+         return
+         break
+         elif [ "$REPLY" -eq "$i" ]; then
+         clear
+        for bin in "$@"; do
+       if [ ! -z "$(busybox hexdump -C -n 20000 /"$nd"/"$bin" | busybox grep -o "30 50 4c 41")" -a "$nd" == "data/local/UnpackerSuper" ]; then
+      echo
+      echo -e "\033[33;1m.....Skipped unpacking "$bin" \033[0m"
+      unset file
+      continue
+        else
+         file=/"$nd"/"$bin"
+         fi
+       my_sin
+       qqq
+       done
+        main_menu
+        return
+        break
+        elif [ "$REPLY" -eq "$j" ]; then
+         clear
+        main_menu
+        return
+        break
+        elif [ "$REPLY" -eq "$e" ]; then
+         clear
+        return
+        break
+        else
+        clear
+        echo
+            echo "      Enter the numbers corresponding to the menu."
+         my_super
+         return
+         break
+         fi
+         break;;
+      *) clear
+         echo
+            echo "      Enter the numbers corresponding to the menu."
+         my_super
+         return
+         break;;
+  esac
+ done
+ else
+ echo
+ echo ".....There are no supported \".img\" images for unpacking in the folder: /$nd."
+ echo
+ main_menu
+return
+ fi
+return
+}
+             my_d()
+{
+ 
+             cd
+             echo 
+             echo "...Go to the folder where the files are located: \".img\", For example: cd /sdcard"
+read b && $b
+ if [ $(echo $?) -eq 0 ]; then
+ clear
+ echo
+ echo ".....Search for images..."
+ 
+ dir_dat=/data/local/binary
+ nd=$(echo $b | busybox awk '{ print $2 }' | busybox sed 's!^/!!') && echo "$nd" > /data/local/binary/last.txt
+ v=$(for a in $(busybox find . -maxdepth 1 -name '*.img' -o -name '*.zst' -o -name '*.sin' -o -name '*.win' -o -name '*.PARTITION' -type f -o -iname "*super" -type l | busybox sed 's!./!!'); do
+
+  ext_check $a
+
+   if [ $(echo $?) -eq 0 ]; then
+      echo "$a"
+     fi
+     done)
+
+set -- $v
+
+ if [ ! -z "$v" ]; then
+ clear
+ free_space="$(busybox df -h "$PWD" | busybox tail -1 |  busybox awk '{ print $(NF-2) }')"
+ free_data="$(busybox df -h /data | busybox tail -1 |  busybox awk '{ print $(NF-2) }')"
+ echo
+ echo "...We are in the folder: /$nd"
+ echo "...In /${nd} free: $free_space"
+ if [ "$free_space" != "$free_data" ]; then
+ echo "...In /data freely: $free_data"
+ fi
+ echo
+ echo ".....Select file to unpack:"
+ echo
+select menu in $v "Unpack all images" "Exit to main menu" "Exit"; do
+case $REPLY in
+                  [1-9]*) i="$#"
+                      j="$#"
+                      e="$#"
+                      let i=i+1
+                      let j=j+2
+                      let e=e+3
+                      #let i=i+1
+                      file=$(echo "$@" | busybox cut -d' ' -f"$REPLY")
+         if [ ! -z "$file" -a "$REPLY" -lt "$i" ]; then
+         clear
+    #if [ "$(echo "$file" | busybox grep "*..PARTITION$")" ]; then
+    #file=/"$nd"/"$(busybox mv "$file" "$file".img)"
+    #else
+         file=/"$nd"/"$file"
+         #fi
+
+        my_sin 
+         main_menu
+         return
+         break
+         elif [ "$REPLY" -eq "$i" ]; then
+         clear
+        for bin in "$@"; do
+        if [ ! -z "$(busybox hexdump -C -n 20000 /"$nd"/"$bin" | busybox grep -o "30 50 4c 41")" -a "$nd" == "data/local/UnpackerSuper" ]; then
+      echo
+      echo -e "\033[33;1m.....Skipped unpacking "$bin" \033[0m"
+      unset file
+      continue
+        else
+         file=/"$nd"/"$bin"
+         fi
+       my_sin
+       qqq
+       done 
+        main_menu
+        return
+        break
+        elif [ "$REPLY" -eq "$j" ]; then
+         clear
+        main_menu
+        return
+        break
+        elif [ "$REPLY" -eq "$e" ]; then
+         clear
+        return
+        break
+        else
+        clear
+        echo
+            echo "      Enter the numbers corresponding to the menu."
+         my_d
+         return
+         break
+         fi
+         break;;
+      *) clear
+         echo
+            echo "      Enter the numbers corresponding to the menu."
+         my_d
+         return
+         break;;
+  esac
+ done
+ else
+ echo
+ echo ".....There are no supported \".img\" images for unpacking in the folder: /$nd."
+ echo
+ main_menu
+return
+ fi
+echo
+else
+echo
+echo ".....error: Error navigating to directory!"
+echo
+echo "Enter the directory correctly!"
+echo
+my_d
+return
+fi
+return
+}
+            my_new(){
+
+            echo
+            echo "      Menu: Unpacking .img"
+            echo
+select menu in  "Unpacking .img from the folder: /data/local/UnpackerSystem" "Unpacking .img from the folder: /data/local/UnpackerSuper" "Unpacking .img from the folder: /data/local/UnpackerPayload" "Unpacking .img from the folder: /data /local/UnpackerSystem/uka_backup" "Unpacking .img from the folder: /data/local/UnpackerQfil" "Unpacking .img from the last used folder" "Enter the path to the folder with the .img image" "Exit to main menu" "Exit"; do
+ case $REPLY in
+             1 ) clear
+         nd=data/local/UnpackerSystem
+         #my_system
+         my_super
+         return
+         main_menu
+         return
+         break ;;
+       2 ) clear
+         nd=data/local/UnpackerSuper
+         my_super
+         return
+         main_menu
+         return
+         break ;;
+       3 ) clear
+         nd=data/local/UnpackerPayload
+         my_super
+         return
+         main_menu
+         return
+         break ;;
+       4 ) clear
+         nd=data/local/UnpackerSystem/uka_backup
+         my_super
+         return
+         main_menu
+         return
+         break ;;
+       5 ) clear
+         nd=data/local/UnpackerQfil
+         my_super
+         return
+         main_menu
+         return
+         break ;;
+       6 ) clear
+        last_dir="$(busybox cat /data/local/binary/last.txt 2> /dev/null | busybox sed 's!^/!!')"
+         if [ ! -z "$last_dir" -a -d /"$last_dir" ]; then
+         nd="$last_dir"
+         my_super
+         return
+         main_menu
+         return
+         else
+         echo
+         echo ".....The last folder has not yet been defined!"
+         echo
+         main_menu
+         return
+         fi
+         
+         #my_super
+         #return
+         #main_menu
+         #return
+         break ;;
+       7 ) clear
+        
+         my_d
+         return
+         main_menu
+         return
+         break ;;
+       8 ) clear
+               main_menu
+                     break ;;
+       9 ) clear
+                 return
+                    break ;;
+       * ) clear
+            echo
+            echo "      Enter the numbers corresponding to the menu." 
+              my_new
+              break ;;
+  esac
+ done
+return
+}
+ my_new
+ break;;
+         4) clear
+            my_mount()
+{
+ 
+ #check_mount
+ #if [ $(echo $?) -eq 0 ] ; then
+ #busybox rm -f /data/local/binary/papka.txt
+ #fi
+ #home_dir="/data/local/UnpackerSystem"
+ cd $home_dir
+ my_dir="/data/local/binary"
+ > $my_dir/mm
+ > $my_dir/mm1
+ > $my_dir/spars
+ #> $my_dir/fs_ext
+ echo
+ echo ".....Search for images..."
+
+ obraz=$(a=$(busybox find "$home_dir" -maxdepth 1 -name '*.img' -type f | busybox sed "s!$home_dir!!")
+ set -- $a
+
+ for v in $a; do
+
+
+
+ if [ "$(echo $v | busybox awk '{ print $3 }' | busybox grep "$v")" != "$(for i in 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50; do
+      loop=/dev/block/loop$i;
+
+      busybox losetup $loop 2> /dev/null | busybox grep "$v" | busybox awk '{ print $3 }'
+done)" ]; then
+
+ zik=$(echo $v)
+ zik1=$(echo $v | busybox sed "s!$home_dir!!" | busybox sed 's!.img!!')
+ if [ "$home_dir" != /data/local/UnpackerSystem/ ]; then
+ echo "$zik mounted In the folder: /data/local/$zik1" >> $my_dir/mm1
+ else
+ echo "$zik mounted In the folder: /data/local/$zik1" >> $my_dir/mm
+ fi
+ else
+ if [ -z "$(busybox hexdump -C -n 20000 "$v" | busybox grep '3a ff 26 ed')" ]; then
+ if [ ! -z "$(busybox hexdump -C -n 2000 "$v"| busybox awk '/00000430/ { print $10$11 }' | busybox grep "53ef")" ]; then
+ echo $v
+ else
+ echo $v > /dev/null
+ fi
+ else
+ echo $v >> $my_dir/spars
+ fi
+ fi
+ done)
+ set -- $obraz
+
+ if busybox test -s "$my_dir/mm" -o -s "$my_dir/mm1"; then
+ clear
+ echo
+ echo
+ echo "   Already mounted images in the folder: \"/$print_dir\""
+ busybox cat $my_dir/mm
+ busybox cat $my_dir/mm1
+
+ else
+ clear
+ echo
+ echo "   There are no mounted images in the folder: \"/$print_dir\""
+ echo
+ fi
+
+ if busybox test -s "$my_dir/spars"; then
+ echo
+ echo "   sparse images In the folder /$print_dir:"
+ busybox cat $my_dir/spars
+ fi
+
+ if [ ! -z "$obraz" ]; then
+ echo
+ echo "   Available raw images for mounting. Choose File:"
+ echo " --------------------------------------------------------"
+ echo
+ select menu in $obraz "Exit to main menu"; do
+case $REPLY in
+                  [1-9]*) i="$#"
+                      let i=i+1
+                      file=$(echo "$@" | busybox cut -d' ' -f"$REPLY")
+         if [ ! -z "$file" -a "$REPLY" -lt "$i" ]; then
+         clear
+         if [ -z "$(busybox hexdump -C -n 20000 "$file" | busybox grep '3a ff 26 ed')" ]; then
+         if [ ! -z "$(busybox hexdump -C -n 2000 "$file" | busybox awk '/00000430/ { print $10$11 }' | busybox grep "53ef")" ]; then
+          a=$(echo $file | busybox sed -e 's!./!!; s!.img!!')
+
+         . /data/local/binary/my_mounting
+
+          busybox echo -ne "/data/local/$a|" >> /data/local/binary/papka.txt
+
+          main_menu
+          return
+          else
+          echo
+          echo
+          echo "   $file is not an ext4 image."
+          main_menu
+          return
+          break
+          fi
+          else
+          echo
+          echo
+          echo "   $file is a sparse image. To mount, convert to raw.img."
+          main_menu
+          return
+          fi
+         main_menu
+         return
+         break
+         elif [ "$REPLY" -eq "$i" ]; then
+         clear
+        main_menu
+        return
+        break
+        else
+        clear
+        echo
+            echo "      Enter the numbers corresponding to the menu."
+         my_mount
+         return
+         break
+         fi
+         break;;
+      *) clear
+         echo
+            echo "      Enter the numbers corresponding to the menu."
+         my_mount
+         return
+         break;;
+  esac
+ done
+ 
+ else
+ echo
+ echo "   In the folder: \"/$print_dir\" there are no *.img files available for mounting."
+ echo
+ main_menu
+ return
+ fi
+ return
+}
+
+
+        my_d()
+{
+             cd
+             echo 
+             echo "...Go to the folder where the files are located: \".img\", For example: cd /sdcard"
+read b && $b
+ if [ $(echo $?) -eq 0 ]; then
+ clear
+
+ home_dir="$PWD/"
+ print_dir="$(echo "$PWD" | busybox sed 's!^/!!')"
+
+ my_mount
+ return
+ else
+ echo
+ echo ".....error: Error navigating to directory!"
+ echo
+ echo "Enter the directory correctly!"
+ echo
+ my_d
+ return
+ fi
+ return
+}
+            my10(){
+            echo
+            echo "      Menu: Mounting raw images *.img"
+            echo "     --------------------------------------"
+            echo
+select img in "Mount the image from the folder: /data/local/UnpackerSystem" "Enter the path to the folder with the .img image to mount" "Unmount the image" "Exit to main menu" "Exit"; do
+case $REPLY in 
+         1 ) clear
+             home_dir="/data/local/UnpackerSystem/"
+             print_dir="data/local/UnpackerSystem"
+             my_mount
+             break ;;
+         2 ) clear
+             my_d
+             break ;;
+         3 ) clear
+             sel_umount(){
+if [ -z "$file" ]; then
+         clear
+         main_menu
+         return
+      else
+          clear
+         . /data/local/binary/my_unmounting
+         check_mount
+ if [ $(echo $?) -eq 0 ] ; then
+ busybox rm -f /data/local/binary/papka.txt
+ fi
+          main_menu
+          return
+          fi
+return
+}
+
+my_umount(){
+ if busybox test -s /data/local/binary/papka.txt; then
+ p="$(busybox cat /data/local/binary/papka.txt 2> /dev/null | busybox sed -e 's!|$!!; s!\+!\\+!')"
+
+ b=$(busybox mount | busybox cut -d" " -f3 | busybox grep -E "$p") 2> /dev/null
+ else
+ unset b
+fi
+
+ set -- $b
+
+if [ ! -z "$b" ]; then
+echo
+echo "     Select the folder to unmount:"
+echo
+select menu in $b "Exit to main menu"; do
+case $REPLY in
+      1) file="$1"
+         clear
+         sel_umount
+         break;;
+      2) file="$2"
+         clear
+         sel_umount
+         break;;
+      3) file="$3"
+         clear
+         sel_umount
+         break;;
+      4) file="$4"
+         clear
+         sel_umount
+         break;;
+      5) file="$5"
+         clear
+         sel_umount
+         break;;
+      6) file="$6"
+         clear
+         sel_umount
+         break;;
+      *) clear
+         main_menu
+         break;;
+  esac
+ done
+ else
+ echo
+ echo "     There are no folders to unmount."
+ main_menu
+ return
+ fi
+ return
+}
+ my_umount
+break
+             my10
+             break ;;
+         4 ) clear
+             main_menu 
+             break ;;
+         5 ) clear
+             break ;;
+         *) echo "Enter the number corresponding to the Menu items: Mounting images" ;;
+    esac
+done
+return
+}
+my10
+break ;;
+         5) clear
+            my3(){
+            echo
+            echo "      Menu: Unpacking .dat"
+            echo
+select img in "Unpacking .dat" "Unpacking .dat from the last used folder" "Exit to main menu" "Exit"; do
+case $REPLY in 
+         1 ) clear
+             cd
+             echo 
+             echo "..Go to the folder where the files are located: \".dat\" and \".transfer.list\", For example: cd /sdcard"
+             my_d()
+{
+ read b && $b
+ if [ $(echo $?) -eq 0 ]; then
+ clear
+ dir_dat=/data/local/binary
+ ndd=$(echo $b | busybox awk '{ print $2 }' | busybox sed 's!^/!!') && echo "$ndd" > "$dir_dat"/last.txt
+ v=$(busybox find . -maxdepth 1 -name '*.new.dat' 2> /dev/null | busybox sed 's!./!!')
+
+ set -- $v
+
+ if [ ! -z "$v" ]; then
+ free_space="$(busybox df -h "$PWD" | busybox tail -1 |  busybox awk '{ print $(NF-2) }')"
+ free_data="$(busybox df -h /data | busybox tail -1 |  busybox awk '{ print $(NF-2) }')"
+ echo
+ echo "...We are in the folder: /$ndd"
+ echo "...In /${ndd} free: $free_space"
+ if [ "$free_space" != "$free_data" ]; then
+ echo "...In /data freely: $free_data"
+ fi
+ echo
+ echo ".....Select file to unpack:"
+ echo
+ select menu in $v "Exit to main menu" "Exit"; do
+ case $REPLY in
+                   [1-9]*) i="$#"
+                      j="$#"
+                      let i=i+1
+                      let j=j+2
+                      file=$(echo "$@" | busybox cut -d' ' -f"$REPLY")
+       if [ ! -z "$file" -a "$REPLY" -lt "$i" ]; then
+         clear
+         #nd=data/local/UnpackerSystem
+         . ${dir}/unpack_dat
+         main_menu
+         return
+         break
+       elif [ "$REPLY" -eq "$i" ]; then
+         clear
+        main_menu
+        return
+        break
+       elif [ "$REPLY" -eq "$j" ]; then
+         clear
+        return
+        break
+       else
+        clear
+        echo
+            echo "      Enter the numbers corresponding to the menu."
+         my3
+         return
+         break
+         fi
+         break;;
+      *) clear
+         echo
+            echo "      Enter the numbers corresponding to the menu."
+         my3
+         return
+         break;;
+  esac
+ done
+ else
+ echo
+ echo ".....There are no \".dat\" images for unpacking in the \"/$ndd\" folder."
+ echo
+ main_menu
+return
+ fi
+echo
+else
+echo
+echo ".....error: Error navigating to directory!"
+echo
+echo "Enter the directory correctly!"
+echo
+my_d
+return
+fi
+return
+}
+my_d
+ break ;;
+           2 ) clear
+  my_last_dat()
+{         
+ v=$(busybox find . -maxdepth 1 -name '*.new.dat' 2> /dev/null | busybox sed 's!./!!')
+
+ set -- $v
+
+if [ ! -z "$v" ]; then
+free_space="$(busybox df -h "$PWD" | busybox tail -1 |  busybox awk '{ print $(NF-2) }')"
+ free_data="$(busybox df -h /data | busybox tail -1 |  busybox awk '{ print $(NF-2) }')"
+ echo
+ echo "...We are in the folder: /$ndd"
+ echo "...In /${ndd} free: $free_space"
+ if [ "$free_space" != "$free_data" ]; then
+ echo "...In /data freely: $free_data"
+ fi
+ echo
+ echo ".....Select file to unpack:"
+ echo
+select menu in $v "Exit to main menu" "Exit"; do
+case $REPLY in
+                  [1-9]*) i="$#"
+                      j="$#"
+                      let i=i+1
+                      let j=j+2
+                      file=$(echo "$@" | busybox cut -d' ' -f"$REPLY")
+       if [ ! -z "$file" -a "$REPLY" -lt "$i" ]; then
+         clear
+         #nd=data/local/UnpackerSystem
+         . ${dir}/unpack_dat
+         main_menu
+         return
+         break
+       elif [ "$REPLY" -eq "$i" ]; then
+         clear
+        main_menu
+        return
+        break
+       elif [ "$REPLY" -eq "$j" ]; then
+         clear
+        return
+        break
+       else
+        clear
+        echo
+            echo "      Enter the numbers corresponding to the menu."
+         my3
+         return
+         break
+         fi
+         break;;
+      *) clear
+         echo
+            echo "      Enter the numbers corresponding to the menu."
+         my3
+         return
+         break;;
+  esac
+ done
+ else
+ echo
+ echo ".....There are no \".dat\" images for unpacking in the \"/$ndd\" folder."
+ echo
+ main_menu
+return
+ fi
+ return
+}
+
+  dir_dat=/data/local/binary
+ last_dir="$(busybox cat /data/local/binary/last.txt 2> /dev/null | busybox sed 's!^/!!')" 
+       if [ ! -z "$last_dir" -a -d /"$last_dir" ]; then
+       ndd="$last_dir"
+       cd /"$ndd"
+       my_last_dat
+       return
+       else
+       echo
+       echo ".....The last used folder has not yet been determined!"
+       echo
+       main_menu
+       fi
+       break ;;
+         3 ) clear
+             main_menu
+             break ;;
+         4 ) clear
+             break ;;
+         *) clear
+            echo
+            echo ".....Enter the number corresponding to this menu."
+             my3
+            break ;;      
+    esac
+done
+return
+}
+my3
+break ;;
+         6) clear
+
+qqq_br()
+       {
+       free_space="$(busybox df -h "$PWD" | busybox tail -1 |  busybox awk '{ print $(NF-2) }')"
+ free_data="$(busybox df -h /data | busybox tail -1 |  busybox awk '{ print $(NF-2) }')"
+ echo -e "\033[33;1m...In /${nb} free: $free_space \033[0m"
+ if [ "$free_space" != "$free_data" ]; then
+ echo -e "\033[33;1m...In /data freely: $free_data \033[0m"
+ fi
+return
+}
+
+            my_br(){
+            echo
+            echo "      Menu: Unpacking .br"
+            echo
+select img in "Unpack .br" "Unpack .br from the last used folder" "Exit to main menu" "Exit"; do
+case $REPLY in 
+         1 ) clear
+              cd
+             echo 
+             echo "...Go to the folder where the files are located: \".br\" и \".transfer.list\", For example: cd /sdcard"           
+              my_b()
+{
+read b && $b
+if [ $(echo $?) -eq 0 ]; then
+clear
+dir_dat=/data/local/binary
+nb=$(echo $b | busybox awk '{ print $2 }' | busybox sed 's!^/!!') && echo "$nb" > "$dir_dat"/last.txt
+v=$(busybox find . -maxdepth 1 -name '*.new.dat.br' -type f 2> /dev/null | busybox sed 's!./!!')
+
+set -- $v
+
+if [ ! -z "$v" ]; then
+free_space="$(busybox df -h "$PWD" | busybox tail -1 |  busybox awk '{ print $(NF-2) }')"
+ free_data="$(busybox df -h /data | busybox tail -1 |  busybox awk '{ print $(NF-2) }')"
+ echo
+ echo "...We are in the folder: /$nb"
+ echo "...In /${nb} free: $free_space"
+ if [ "$free_space" != "$free_data" ]; then
+ echo "...In /data freely: $free_data"
+ fi
+ echo
+ echo ".....Select file to unpack:"
+ echo
+select menu in $v "Unpack all images" "Exit to main menu" "Exit"; do
+case $REPLY in
+                  [1-9]*) i="$#"
+                      j="$#"
+                      e="$#"
+                      let i=i+1
+                      let j=j+2
+                      let e=e+3
+                      file=$(echo "$@" | busybox cut -d' ' -f"$REPLY")
+       if [ ! -z "$file" -a "$REPLY" -lt "$i" ]; then
+         clear
+         . ${dir}/unpack_br
+         main_menu
+         return
+         break
+       elif [ "$REPLY" -eq "$i" ]; then
+         clear
+        for br in "$@"; do
+        file=/"$nb"/"$br"
+       . ${dir}/unpack_br
+       qqq_br
+       done 
+        main_menu
+        return
+        break
+       elif [ "$REPLY" -eq "$j" ]; then
+         clear
+        main_menu
+        return
+        break
+       elif [ "$REPLY" -eq "$e" ]; then
+         clear
+        return
+        break
+       else
+        clear
+        echo
+            echo "      Enter the numbers corresponding to the menu."
+         my_br
+         return
+         break
+         fi
+         break;;
+      *) clear
+         echo
+            echo "      Enter the numbers corresponding to the menu."
+         my_br
+         return
+         break;;
+  esac
+ done
+ else
+ echo
+ echo ....."There are no \".br\" images for unpacking in the \"/$nb\" folder."
+ echo
+ main_menu
+return
+ fi
+echo
+else
+echo
+echo .....error: Error navigating to directory!
+echo
+echo Enter the directory correctly!
+echo
+my_b
+return
+fi
+return
+}
+my_b
+              break ;;
+         2 ) clear
+ my_last_br()
+{
+ 
+v=$(busybox find . -maxdepth 1 -name '*.new.dat.br' -type f 2> /dev/null | busybox sed 's!./!!')
+
+set -- $v
+
+if [ ! -z "$v" ]; then
+free_space="$(busybox df -h "$PWD" | busybox tail -1 |  busybox awk '{ print $(NF-2) }')"
+ free_data="$(busybox df -h /data | busybox tail -1 |  busybox awk '{ print $(NF-2) }')"
+ echo
+ echo "...We are in the folder: /$nb"
+ echo "...In /${nb} free: $free_space"
+ if [ "$free_space" != "$free_data" ]; then
+ echo "...In /data freely: $free_data"
+ fi
+ echo
+ echo ".....Select file to unpack:"
+ echo
+select menu in $v "Unpack all images" "Exit to main menu" "Exit"; do
+case $REPLY in
+                  [1-9]*) i="$#"
+                      j="$#"
+                      e="$#"
+                      let i=i+1
+                      let j=j+2
+                      let e=e+3
+                      file=$(echo "$@" | busybox cut -d' ' -f"$REPLY")
+       if [ ! -z "$file" -a "$REPLY" -lt "$i" ]; then
+         clear
+         #nd=data/local/UnpackerSystem
+         . ${dir}/unpack_br
+         main_menu
+         return
+         break
+       elif [ "$REPLY" -eq "$i" ]; then
+         clear
+      for br in "$@"; do
+        file=/"$nb"/"$br"
+       . ${dir}/unpack_br
+       qqq_br
+       done 
+        main_menu
+        return
+        break
+       elif [ "$REPLY" -eq "$j" ]; then
+         clear
+        main_menu
+        return
+        break
+       elif [ "$REPLY" -eq "$e" ]; then
+         clear
+        return
+        break
+       else
+        clear
+        echo
+            echo "      Enter the numbers corresponding to the menu."
+         my_br
+         return
+         break
+         fi
+         break;;
+      *) clear
+         echo
+            echo "      Enter the numbers corresponding to the menu."
+         my_br
+         return
+         break;;
+  esac
+ done
+ else
+ echo
+ echo ....."There are no \".br\" images for unpacking in the \"/$nb\" folder."
+ echo
+ main_menu
+return
+ fi
+}
+
+  dir_dat=/data/local/binary
+ last_dir="$(busybox cat /data/local/binary/last.txt 2> /dev/null | busybox sed 's!^/!!')" 
+       if [ ! -z "$last_dir" -a -d /"$last_dir" ]; then
+       nb="$last_dir"
+       cd /"$nb"
+       my_last_br
+       return
+       else
+       echo
+       echo ".....The last used folder has not yet been determined!"
+       echo
+       main_menu
+       fi
+       break ;;
+         3 ) clear
+             main_menu
+             break ;;
+         4 ) clear
+             break ;;
+         *) clear
+            echo
+            echo ".....Enter the number corresponding to this menu."
+             my_br
+            break ;;      
+    esac
+done
+return
+}
+my_br
+break ;;
+         7) #Assembling .img start +++++++++++++++++
+
+dir=/data/local/binary
+cd /data/local/UnpackerSystem
+
+ check_d()
+{
+ #cd /data/local/UnpackerSystem
+ for a in $(busybox find -maxdepth 1 ! -name "." -type d | busybox sed 's!./!!'); do
+ if [ -f "config/"$a"/"$a"_file_contexts" ]; then
+ return 0
+ fi
+ done
+ return
+}
+
+qqq_space()
+       {
+       free_space="$(busybox df -h "$outdir" | busybox tail -1 |  busybox awk '{ print $(NF-2) }')"
+ free_data="$(busybox df -h /data | busybox tail -1 |  busybox awk '{ print $(NF-2) }')"
+ echo -e "\033[33;1m...In $outdir free: $free_space \033[0m"
+ if [ "$free_space" != "$free_data" ]; then
+ echo -e "\033[33;1m...In /data freely: $free_data \033[0m"
+ fi
+return
+}
+             pack_img_my()
+{
+b=$(for a in $(busybox find -maxdepth 1 ! -name "." -type d | busybox sed 's!./!!'); do
+ if [ -f "config/"$a"/"$a"_file_contexts" ]; then
+ echo "$a"
+ fi
+ done)
+
+ set -- $b
+
+ if [ ! -z "$b" ]; then
+ echo
+ echo ".....Select the build folder:"
+ echo
+ select menu in $b "Exit to main menu"; do
+case $REPLY in
+ [1-9]*) i="$#"
+
+ let i=i+1
+
+ file=$(echo "$@" | busybox cut -d' ' -f"$REPLY")
+ if [ ! -z "$file" -a "$REPLY" -lt "$i" ]; then
+ clear
+#nd=data/local/UnpackerSystem
+          pack_d="$file"
+          config="config/$pack_d"
+
+                    size=111
+                    set -- $size
+                    file_size=${dir}/pack_img
+         if [ -f ./"$config"/"$pack_d"*_avb.img ]; then
+         file_sh=./"$config"/"$pack_d"*_pack_avb_sparse.sh
+        else
+         file_sh=./"$config"/"$pack_d"*_pack_sparse.sh
+          fi
+                     if [ "$size_add" == "1" ]; then
+                     my_size_add
+                 else
+                  my_size
+                  fi
+                 return
+               break
+ main_menu
+ return
+ break
+ elif [ "$REPLY" -eq "$i" ]; then
+ clear
+ main_menu
+ return
+ break
+ else
+ clear
+ echo
+ echo " Enter the numbers corresponding to the menu."
+ pack_img_my
+ return
+ break
+ fi
+ break;;
+ *) clear
+ echo
+ echo " Enter the numbers corresponding to the menu."
+ pack_img_my
+ return
+ break;;
+ esac
+ done
+ else
+ clear
+ echo
+ echo ....."In \"$PWD\" there are no build folders available."
+ echo
+ main_menu
+ return
+fi
+return
+}
+
+
+pack_img_orig()
+{
+ b=$(for a in $(busybox find -maxdepth 1 ! -name "." -type d | busybox sed 's!./!!'); do
+ if [ -f "config/"$a"/"$a"_file_contexts" ]; then
+ echo "$a"
+ fi
+ done)
+
+ set -- $b
+
+ if [ ! -z "$b" ]; then
+ echo
+ echo ".....Select the build folder:"
+ echo
+ select menu in $b "Exit to main menu"; do
+case $REPLY in
+ [1-9]*) i="$#"
+
+ let i=i+1
+
+ file=$(echo "$@" | busybox cut -d' ' -f"$REPLY")
+ if [ ! -z "$file" -a "$REPLY" -lt "$i" ]; then
+ clear
+#nd=data/local/UnpackerSystem
+ pack_d="$file"
+ config="config/$pack_d"
+ 
+
+ size=100
+ . ${dir}/pack_img
+ main_menu
+ return
+ break
+ elif [ "$REPLY" -eq "$i" ]; then
+ clear
+ main_menu
+ return
+ break
+ else
+ clear
+ echo
+ echo " Enter the numbers corresponding to the menu."
+ pack_img_orig
+ return
+ break
+ fi
+ break;;
+ *) clear
+ echo
+ echo " Enter the numbers corresponding to the menu."
+ pack_img_orig
+ return
+ break;;
+ esac
+ done
+ else
+ clear
+ echo
+ echo ....."In \"$PWD\" there are no build folders."
+ echo
+ main_menu
+ return
+fi
+return
+}
+
+ pack_img_raw_orig()
+{
+ b=$(for a in $(busybox find -maxdepth 1 ! -name "." -type d | busybox sed 's!./!!'); do
+ if [ -f "config/"$a"/"$a"_file_contexts" ]; then
+ echo "$a"
+ fi
+ done)
+
+ set -- $b
+
+ if [ ! -z "$b" ]; then
+ echo
+ echo ".....Select the build folder:"
+ echo
+ select menu in $b "Exit to main menu"; do
+case $REPLY in
+ [1-9]*) i="$#"
+
+ let i=i+1
+
+ file=$(echo "$@" | busybox cut -d' ' -f"$REPLY")
+ if [ ! -z "$file" -a "$REPLY" -lt "$i" ]; then
+ clear
+#nd=data/local/UnpackerSystem
+ pack_d="$file"
+ config="config/$pack_d"
+ 
+
+ size=100
+ . ${dir}/pack_img_raw
+ main_menu
+ return
+ break
+ elif [ "$REPLY" -eq "$i" ]; then
+ clear
+ main_menu
+ return
+ break
+ else
+ clear
+ echo
+ echo " Enter the numbers corresponding to the menu."
+ pack_img_raw_orig
+ return
+ break
+ fi
+ break;;
+ *) clear
+ echo
+ echo " Enter the numbers corresponding to the menu."
+ pack_img_raw_orig
+ return
+ break;;
+ esac
+ done
+ else
+ clear
+ echo
+ echo ....."In \"$PWD\" there are no build folders."
+ echo
+ main_menu
+ return
+fi
+return
+}
+
+pack_img_raw_my()
+{
+b=$(for a in $(busybox find -maxdepth 1 ! -name "." -type d | busybox sed 's!./!!'); do
+ if [ -f "config/"$a"/"$a"_file_contexts" ]; then
+ echo "$a"
+ fi
+ done)
+
+ set -- $b
+
+ if [ ! -z "$b" ]; then
+ echo
+ echo ".....Select the build folder:"
+ echo
+ select menu in $b "Exit to main menu"; do
+case $REPLY in
+ [1-9]*) i="$#"
+
+ let i=i+1
+
+ file=$(echo "$@" | busybox cut -d' ' -f"$REPLY")
+ if [ ! -z "$file" -a "$REPLY" -lt "$i" ]; then
+ clear
+#nd=data/local/UnpackerSystem
+          pack_d="$file"
+          config="config/$pack_d"
+
+                    size=111
+                    set -- $size
+                    file_size=${dir}/pack_img_raw
+         if [ -f ./"$config"/"$pack_d"_avb.img ]; then
+         file_sh=./"$config"/"$pack_d"_pack_avb.sh
+        else
+         file_sh=./"$config"/"$pack_d"_pack.sh
+          fi
+                     #my_size
+           if [ "$size_add" == "1" ]; then
+                     my_size_add
+                 else
+                  my_size
+                  fi
+                 return
+               break
+ main_menu
+ return
+ break
+ elif [ "$REPLY" -eq "$i" ]; then
+ clear
+ main_menu
+ return
+ break
+ else
+ clear
+ echo
+ echo " Enter the numbers corresponding to the menu."
+ pack_img_raw_my
+ return
+ break
+ fi
+ break;;
+ *) clear
+ echo
+ echo " Enter the numbers corresponding to the menu."
+ pack_img_raw_my
+ return
+ break;;
+ esac
+ done
+ else
+ clear
+ echo
+ echo ....."In \"$PWD\" there are no build folders available."
+ echo
+ main_menu
+ return
+fi
+return
+}
+
+  pack_img_raw_new()
+{
+
+free_place
+ #if [ "$erof" == "1" ]; then
+ #cd /data/local/UnpackerSystem/erofs
+ #elif [ "$erof" == "0" ]; then
+ #cd /data/local/UnpackerSystem
+ #fi
+
+b=$(for a in $(busybox find -maxdepth 1 ! -name "." -type d | busybox sed 's!./!!'); do
+ if [ -f "config/"$a"/"$a"_file_contexts" ]; then
+ echo "$a"
+ fi
+ done)
+
+ set -- $b
+
+ if [ ! -z "$b" ]; then
+ echo
+ echo ".....Select the build folder:"
+ echo
+ select menu in $b "Collect all images" "Exit to main menu" "Exit"; do
+case $REPLY in
+ [1-9]*) i="$#"       
+        j="$#"
+        e="$#"
+        let i=i+1
+        let j=j+2
+        let e=e+3
+
+ file=$(echo "$@" | busybox cut -d' ' -f"$REPLY")
+ if [ ! -z "$file" -a "$REPLY" -lt "$i" ]; then
+ clear
+#nd=data/local/UnpackerSystem
+          pack_d="$file"
+          config="config/$pack_d"
+ 
+ size_orig="$(busybox expr $(busybox du -s "$pack_d" | busybox awk '{ print $1 }') \* 1024)"
+ size_real="$(busybox cat "$config"/"$pack_d"_size.txt)"
+if busybox test "$size_orig" -le "10485760"; then
+ get_add="8192"
+  check_size_img
+ #size_new="$(busybox expr "$size_orig" \* 109 / 105 / 4096 \* 4096)"
+else
+ get_add="1048576"
+ check_size_img
+ #size_new="$(busybox expr "$size_orig" \* 12 / 11 / 4096 \* 4096)"
+  fi
+                    size=111
+                    set -- $size
+                   r_size="$size_new"
+                   set -- $r_size
+                    file_size=${dir}/pack_img_raw
+         if busybox test -s ./"$config"/"$pack_d"*_avb.img; then
+         file_sh=./"$config"/"$pack_d"*_pack_avb.sh
+        else
+         file_sh=./"$config"/"$pack_d"*_pack.sh
+         busybox sed -e "s!-l [0-9]*!-l "$r_size"!" $file_sh > "$config"/"$pack_d"_gsize.sh
+          fi
+              . $file_size 
+              main_menu
+              return
+              break
+  elif [ "$REPLY" -eq "$i" ]; then
+   clear
+   for papka in "$@"; do
+          if [ "$erof" == "0" ]; then
+          erof="0"
+          elif [ "$erof" == "1" ]; then
+          erof="1"
+          fi
+          pack_d="$papka"
+          config="config/$pack_d"
+ 
+ size_orig="$(busybox expr $(busybox du -s "$pack_d" | busybox awk '{ print $1 }') \* 1024)"
+ size_real="$(busybox cat "$config"/"$pack_d"_size.txt)"
+if busybox test "$size_orig" -le "10485760"; then
+ get_add="8192"
+  check_size_img
+else
+ get_add="1048576"
+ check_size_img
+  fi
+                    size=111
+                    set -- $size
+                   r_size="$size_new"
+                   set -- $r_size
+                    file_size=${dir}/pack_img_raw
+         if busybox test -s ./"$config"/"$pack_d"*_avb.img; then
+         file_sh=./"$config"/"$pack_d"*_pack_avb.sh
+        else
+         file_sh=./"$config"/"$pack_d"*_pack.sh
+         busybox sed -e "s!-l [0-9]*!-l "$r_size"!" $file_sh > "$config"/"$pack_d"_gsize.sh
+          fi
+              . $file_size
+              qqq_space
+              sleep 2
+done
+          main_menu
+              return
+              break
+  
+ elif [ "$REPLY" -eq "$j" ]; then
+ clear
+ main_menu
+ return
+ break
+ elif [ "$REPLY" -eq "$e" ]; then
+ clear
+ return
+ break
+ else
+ clear
+ echo
+ echo " Enter the numbers corresponding to the menu."
+ pack_img_raw_new
+ return
+ break
+ fi
+ break;;
+ *) clear
+ echo
+ echo " Enter the numbers corresponding to the menu."
+ pack_img_raw_new
+ return
+ break;;
+ esac
+ done
+ else
+ clear
+ echo
+ echo ....."In \"$PWD\" there are no build folders available."
+ echo
+ main_menu
+ return
+fi
+return
+}
+
+  pack_img_new()
+{
+  free_place
+  
+  #if [ "$erof" == "1" ]; then
+ #cd /data/local/UnpackerSystem/erofs
+ #elif [ "$erof" == "0" ]; then
+ #cd /data/local/UnpackerSystem
+ #fi
+
+ b=$(for a in $(busybox find -maxdepth 1 ! -name "." -type d | busybox sed 's!./!!'); do
+ if [ -f "config/"$a"/"$a"_file_contexts" ]; then
+ echo "$a"
+ fi
+ done)
+
+ set -- $b
+
+ if [ ! -z "$b" ]; then
+ echo
+ echo ".....Select the build folder:"
+ echo
+ select menu in $b "Collect all images" "Exit to main menu" "Exit"; do
+case $REPLY in
+ [1-9]*) i="$#"
+        j="$#"
+        e="$#"
+        let i=i+1
+        let j=j+2
+        let e=e+3
+
+ file=$(echo "$@" | busybox cut -d' ' -f"$REPLY")
+ if [ ! -z "$file" -a "$REPLY" -lt "$i" ]; then
+ clear
+#nd=data/local/UnpackerSystem
+          pack_d="$file"
+          config="config/$pack_d"
+ 
+ size_orig="$(busybox expr $(busybox du -s "$pack_d" | busybox awk '{ print $1 }') \* 1024)"
+ size_real="$(busybox cat "$config"/"$pack_d"_size.txt)"
+if busybox test "$size_orig" -le "10485760"; then
+ get_add="8192"
+  check_size_img
+ #size_new="$(busybox expr "$size_orig" \* 109 / 105 / 4096 \* 4096)"
+else
+ get_add="1048576"
+ check_size_img
+ #size_new="$(busybox expr "$size_orig" \* 12 / 11 / 4096 \* 4096)"
+  fi
+                    size=111
+                    set -- $size
+                   r_size="$size_new"
+                   set -- $r_size
+                    file_size=${dir}/pack_img
+         if busybox test -s ./"$config"/"$pack_d"*_avb.img; then
+         file_sh=./"$config"/"$pack_d"*_pack_avb_sparse.sh
+        else
+         file_sh=./"$config"/"$pack_d"*_pack_sparse.sh
+         busybox sed -e "s!-l [0-9]*!-l "$r_size"!" $file_sh > "$config"/"$pack_d"_gsize.sh
+          fi
+              . $file_size
+              main_menu
+              return
+              break
+ elif [ "$REPLY" -eq "$i" ]; then
+ for papka in "$@"; do
+          clear
+          if [ "$erof" == "0" ]; then
+          erof="0"
+          elif [ "$erof" == "1" ]; then
+          erof="1"
+          fi
+          
+          pack_d="$papka"
+          config="config/$pack_d"
+ 
+ size_orig="$(busybox expr $(busybox du -s "$pack_d" | busybox awk '{ print $1 }') \* 1024)"
+ size_real="$(busybox cat "$config"/"$pack_d"_size.txt)"
+if busybox test "$size_orig" -le "10485760"; then
+ get_add="8192"
+  check_size_img
+ #size_new="$(busybox expr "$size_orig" \* 109 / 105 / 4096 \* 4096)"
+else
+ get_add="1048576"
+ check_size_img
+ #size_new="$(busybox expr "$size_orig" \* 12 / 11 / 4096 \* 4096)"
+  fi
+                    size=111
+                    set -- $size
+                   r_size="$size_new"
+                   set -- $r_size
+                    file_size=${dir}/pack_img
+         if busybox test -s ./"$config"/"$pack_d"*_avb.img; then
+         file_sh=./"$config"/"$pack_d"*_pack_avb_sparse.sh
+        else
+         file_sh=./"$config"/"$pack_d"*_pack_sparse.sh
+         busybox sed -e "s!-l [0-9]*!-l "$r_size"!" $file_sh > "$config"/"$pack_d"_gsize.sh
+          fi
+              . $file_size
+              qqq_space
+              sleep 2
+done
+          main_menu
+              return
+              break
+ elif [ "$REPLY" -eq "$j" ]; then
+ clear
+ main_menu
+ return
+ break
+ elif [ "$REPLY" -eq "$e" ]; then
+ clear
+ return
+ break
+ else
+ clear
+ echo
+ echo " Enter the numbers corresponding to the menu."
+ pack_img_new
+ return
+ break
+ fi
+ break;;
+ *) clear
+ echo
+ echo " Enter the numbers corresponding to the menu."
+ pack_img_new
+ return
+ break;;
+ esac
+ done
+ else
+ clear
+ echo
+ echo ....."In \"$PWD\" there are no build folders available."
+ echo
+ main_menu
+ return
+fi
+return
+}
+
+pack_img_erofs()
+{
+
+ b=$(for a in $(busybox find -maxdepth 1 ! -name "." -type d | busybox sed 's!./!!'); do
+ if [ -f "config/"$a"/"$a"_file_contexts" ]; then
+ echo "$a"
+ fi
+ done)
+
+ set -- $b
+
+ if [ ! -z "$b" ]; then
+ echo
+ echo ".....Select the build folder:"
+ echo
+ select menu in $b "Collect all images" "Exit to main menu" "Exit"; do
+case $REPLY in
+ [1-9]*) i="$#"
+        j="$#"
+        e="$#"
+        let i=i+1
+        let j=j+2
+        let e=e+3
+
+ file=$(echo "$@" | busybox cut -d' ' -f"$REPLY")
+ if [ ! -z "$file" -a "$REPLY" -lt "$i" ]; then
+ clear
+          pack_d="$file"
+          config="config/$pack_d"
+   . ${dir}/pack_img_erofs
+              main_menu
+              return
+              break
+ elif [ "$REPLY" -eq "$i" ]; then
+ for papka in "$@"; do
+          clear
+          if [ "$erof" == "0" ]; then
+          erof="0"
+          elif [ "$erof" == "1" ]; then
+          erof="1"
+          fi
+          
+          pack_d="$papka"
+          config="config/$pack_d"
+ 
+  . ${dir}/pack_img_erofs
+              qqq_space
+              sleep 2
+done
+          main_menu
+              return
+              break
+ elif [ "$REPLY" -eq "$j" ]; then
+ clear
+ main_menu
+ return
+ break
+ elif [ "$REPLY" -eq "$e" ]; then
+ clear
+ return
+ break
+ else
+ clear
+ echo
+ echo " Enter the numbers corresponding to the menu."
+ pack_img_erofs
+ return
+ break
+ fi
+ break;;
+ *) clear
+ echo
+ echo " Enter the numbers corresponding to the menu."
+ pack_img_erofs
+ return
+ break;;
+ esac
+ done
+ else
+ clear
+ echo
+ echo ....."In \"$PWD\" there are no build folders available."
+ echo
+ main_menu
+ return
+fi
+return
+}
+
+pack_img_e2fs()
+{
+
+ b=$(for a in $(busybox find -maxdepth 1 ! -name "." -type d | busybox sed 's!./!!'); do
+ if [ -f "config/"$a"/"$a"_file_contexts" ]; then
+ echo "$a"
+ fi
+ done)
+
+ set -- $b
+
+ if [ ! -z "$b" ]; then
+ echo
+ echo ".....Select the build folder:"
+ echo
+ select menu in $b "Collect all images" "Exit to main menu" "Exit"; do
+case $REPLY in
+ [1-9]*) i="$#"
+        j="$#"
+        e="$#"
+        let i=i+1
+        let j=j+2
+        let e=e+3
+
+ file=$(echo "$@" | busybox cut -d' ' -f"$REPLY")
+ if [ ! -z "$file" -a "$REPLY" -lt "$i" ]; then
+ clear
+          config_e2fs="1"
+          set -- $config_e2fs
+          pack_d="$file"
+          config="config/$pack_d"
+   . ${dir}/pack_img_e2fsdroid
+          unset config_e2fs
+              main_menu
+              return
+              break
+ elif [ "$REPLY" -eq "$i" ]; then
+ for papka in "$@"; do
+          clear
+          #if [ "$erof" == "0" ]; then
+          #erof="0"
+          #elif [ "$erof" == "1" ]; then
+          #erof="1"
+          #fi
+          config_e2fs="1"
+          set -- $config_e2fs
+          pack_d="$papka"
+          config="config/$pack_d"
+ 
+  . ${dir}/pack_img_e2fsdroid
+          unset config_e2fs
+              qqq_space
+              sleep 2
+done
+          main_menu
+              return
+              break
+ elif [ "$REPLY" -eq "$j" ]; then
+ clear
+ main_menu
+ return
+ break
+ elif [ "$REPLY" -eq "$e" ]; then
+ clear
+ return
+ break
+ else
+ clear
+ echo
+ echo " Enter the numbers corresponding to the menu."
+ pack_img_e2fs
+ return
+ break
+ fi
+ break;;
+ *) clear
+ echo
+ echo " Enter the numbers corresponding to the menu."
+ pack_img_e2fs
+ return
+ break;;
+ esac
+ done
+ else
+ clear
+ echo
+ echo ....."In \"$PWD\" there are no build folders available."
+ echo
+ main_menu
+ return
+fi
+return
+}
+
+
+            my5(){
+            clear
+            check_d
+   if [ $(echo $?) -eq 0 ]; then
+            echo
+            echo "      Menu: Build .img"
+            echo
+select img in "Build .img(sparse)" "Build .img(raw)" "Build super.img" "Write in fs_config" "Information about the size of the folder for assembly" "Restoring symlinks" "Exit to main menu" "Exit"; do
+case $REPLY in 
+         1 ) clear
+             
+             sparse_s()
+             {
+             echo
+  select img in "Assemble .img(sparse) with the original size" "Assemble .img(sparse) with the image size input" "Assemble .img(sparse) with the size of the folder for assembly" "Assemble .img(sparse) in ro with shared_blocks" "Assemble . img(sparse)(erofs to ext4)" "Collect .img(sparse)(erofs to erofs)" "Exit to main menu" "Exit"; do
+case $REPLY in 
+                1 ) clear
+                    erof="0"
+                    set -- $erof
+                     nn
+                     pack_img_orig
+                      break ;;
+                2 ) clear
+                    erof="0"
+                    set -- $erof
+                    nn
+                    pack_img_my
+                     break ;;
+                3 ) clear
+                     erof="0"
+                    set -- $erof
+                    nn
+                    pack_img_new
+                     break ;;
+                 4 ) clear
+                    nn
+                    sparse_e2fs="1"
+                    set -- $sparse_e2fs
+                    #config_e2fs="1"
+                    #set -- $config_e2fs
+                    erof="0"
+                    set -- $erof
+                     pack_img_e2fs
+                     break ;;    
+                 5 ) clear
+                    erof="1"
+                    set -- $erof
+                     nn
+     mkdir /data/local/UnpackerSystem/erofs 2> /dev/null
+  cd /data/local/UnpackerSystem/erofs
+                     pack_img_new
+                     break ;;
+                 6 )  clear
+                    erof="0"
+                    set -- $erof
+                    sparse_erof="1"
+                    set -- $sparse_erof
+                    nn
+     mkdir /data/local/UnpackerSystem/erofs 2> /dev/null
+  cd /data/local/UnpackerSystem/erofs
+                     pack_img_erofs
+                    break ;;   
+                 7 ) clear
+                    main_menu
+                    break ;;
+                 8 ) clear
+                     break ;;
+                * ) clear
+            echo
+            echo "      Enter the numbers corresponding to the menu."
+            echo
+            sparse_s
+              break ;;
+esac
+done
+return
+}
+sparse_s
+break ;;
+         2 ) clear
+             raw_s()
+{
+             echo
+select img in "Assemble .img(raw) with the original size" "Assemble .img(raw) with input of the image size" "Assemble .img(raw) with the size of the folder for assembly" "Assemble .img(raw) in ro with shared_blocks" "Assemble . img(raw)(erofs to ext4)" "Collect .img(raw)(erofs to erofs)" "Exit to main menu" "Exit"; do
+case $REPLY in 
+                1 ) clear
+                    nn
+                    erof="0"
+                    set -- $erof
+                    pack_img_raw_orig
+                      break ;;
+                2 ) clear
+                    nn
+                    erof="0"
+                    set -- $erof
+                     pack_img_raw_my
+                     break ;;
+                3 ) clear
+                    nn
+  
+                    erof="0"
+                    set -- $erof
+                     pack_img_raw_new
+                     break ;;
+                4 ) clear
+                    nn
+                    sparse_e2fs="0"
+                    set -- $sparse_e2fs
+                    #config_e2fs="1"
+                    #set -- $config_e2fs
+                    erof="0"
+                    set -- $erof
+                     pack_img_e2fs
+                     break ;;    
+                5 ) clear
+                    erof="1"
+                    set -- $erof
+                    nn
+     mkdir /data/local/UnpackerSystem/erofs 2> /dev/null
+  cd /data/local/UnpackerSystem/erofs
+                     pack_img_raw_new
+                    break ;;
+                6 )     clear
+                    erof="0"
+                    set -- $erof
+                    sparse_erof="0"
+                    set -- $sparse_erof
+                    nn
+     mkdir /data/local/UnpackerSystem/erofs 2> /dev/null
+  cd /data/local/UnpackerSystem/erofs
+                     pack_img_erofs
+                    break ;;
+                7 ) clear
+                    main_menu
+                    break ;;
+                8 ) clear
+                    break ;;
+                * ) clear
+            echo
+            echo "      Enter the numbers corresponding to the menu." 
+              raw_s
+              break ;;
+  esac
+ done
+return
+}
+raw_s
+break ;;
+         3) clear
+             echo
+             echo ".....Check the presence of the required images in the /data/local/UnpackerSuper folder"
+             echo
+select img in "Assemble super.img(sparse)" "Assemble super.img(raw)" "Exit to main menu" "Exit"; do
+case $REPLY in
+                1 ) clear
+                    spars=1
+                   . /data/local/binary/pack_super_img
+                    main_menu
+                     break ;;
+                2 ) clear
+                    spars=0
+                   . /data/local/binary/pack_super_img
+                    main_menu
+                     break ;;
+                3 ) clear
+                    main_menu
+                    break ;;
+                4 ) clear
+                    break ;;
+                 *) echo "Enter the number corresponding to the items in this menu."
+  esac
+done
+break ;;
+         4) clear
+             echo
+             echo ".....Add folders or files to the extracted image..."
+             echo
+select img in "Record" "Exit to main menu"; do
+case $REPLY in
+                1 ) clear
+                   . /data/local/binary/a_atr
+                     break ;;
+                2 ) clear
+                    main_menu
+                    break ;;
+                 *) echo "Enter the number corresponding to the items in this menu."
+  esac
+done
+break ;;  
+          5 ) clear
+            cd /data/local/UnpackerSystem
+             size_papka()
+{
+ b=$(for a in $(busybox find -maxdepth 1 ! -name "." -type d | busybox sed 's!./!!'); do
+ if [ -f "config/"$a"/"$a"_file_contexts" ]; then
+ echo "$a"
+ fi
+ done)
+
+set -- $b
+
+if [ ! -z "$b" ]; then
+echo
+echo ".....Select folder:"
+echo
+select menu in $b "Exit to main menu" "Exit"; do
+case $REPLY in
+                 [1-9]*) i="$#"
+                      j="$#"
+                      let i=i+1
+                      let j=j+2
+                      file=$(echo "$@" | busybox cut -d' ' -f"$REPLY")
+       if [ ! -z "$file" -a "$REPLY" -lt "$i" ]; then
+         clear
+         pack_d="$file"
+         config="config/$pack_d"
+ 
+ size_orig="$(busybox expr $(busybox du -s "$pack_d" | busybox awk '{ print $1 }') \* 1024)"
+ size_real="$(busybox cat "$config"/"$pack_d"_size.txt)"
+if busybox test "$size_orig" -le "10485760"; then
+ get_size="0"
+ get_add="8192"
+  check_size_img
+else
+ get_size="0"
+ get_add="1048576"
+ check_size_img
+  fi
+
+ size_real="$(busybox cat "$config"/"$pack_d"_size.txt)"
+ echo
+ echo "       -----------------------------"
+ echo "       -----------------------------"
+ echo
+ echo ".....Current image build size:"  
+ echo "     $size_real byte"
+ echo
+ echo ".....Size folders \"$pack_d\":"
+ echo "     $size_orig byte"
+ echo
+ echo ".....Approximate minimum size with which the image will be assembled:"
+ echo "     $size_new byte"
+ echo
+         main_menu
+         return
+         break
+       elif [ "$REPLY" -eq "$i" ]; then
+         clear
+        main_menu
+        return
+        break
+       elif [ "$REPLY" -eq "$j" ]; then
+         clear
+        return
+        break
+       else
+        clear
+        echo
+            echo "      Enter the numbers corresponding to the menu."
+         size_papka
+         return
+         break
+         fi
+         break;;
+      *) clear
+         echo
+            echo "      Enter the numbers corresponding to the menu."
+         size_papka
+         return
+         break;;
+  esac
+  done
+ else
+ echo
+ echo ....."In \"$PWD\" there are no build folders."
+ echo
+ main_menu
+ return
+ fi
+return
+}
+ size_papka
+   break ;;
+
+          6 ) clear
+             cd /data/local/UnpackerSystem
+             symlink()
+{
+ b=$(for a in $(busybox find -maxdepth 1 ! -name "." -type d | busybox sed 's!./!!'); do
+ if [ -f "config/"$a"/"$a"_file_contexts" ]; then
+ echo "$a"
+ fi
+ done)
+
+ set -- $b
+
+ if [ ! -z "$b" ]; then
+ echo
+ echo ".....Select the recovery folder:"
+ echo
+ select menu in $b "Exit to main menu"; do
+case $REPLY in
+ [1-9]*) i="$#"
+
+ let i=i+1
+
+ file=$(echo "$@" | busybox cut -d' ' -f"$REPLY")
+ if [ ! -z "$file" -a "$REPLY" -lt "$i" ]; then
+    clear
+    pack_d="$file"
+    config="config/$pack_d"
+  if busybox test -s "$config"/"$pack_d"_sim.tar; then
+           busybox tar -xf "$config"/"$pack_d"_sim.tar
+if [ $(echo $?) -eq 0 ]; then
+ echo
+ echo ".....Successfully restored!"
+ echo
+ else
+ echo
+ echo ".....Error during recovery!"
+ echo
+ fi
+ else
+ echo
+ echo ".....There is no saved archive to restore!"
+ echo
+ fi
+ main_menu
+ return
+ break
+ elif [ "$REPLY" -eq "$i" ]; then
+ clear
+ main_menu
+ return
+ break
+ else
+ clear
+ echo
+ echo " Enter the numbers corresponding to the menu."
+ symlink
+ return
+ break
+ fi
+ break;;
+ *) clear
+ echo
+ echo " Enter the numbers corresponding to the menu."
+ symlink
+ return
+ break;;
+ esac
+ done
+ else
+ clear
+ echo
+ echo ....."In \"$PWD\" there are no recovery folders."
+ echo
+ main_menu
+ return
+fi
+return
+}
+ symlink
+    break ;;    
+         7 ) clear
+             main_menu
+             break ;;
+         8 ) clear
+             break ;;
+         *) echo "Enter the number corresponding to the Menu items: Build sparse.img." ;;
+    esac
+done
+else
+echo
+echo ....."In \"$PWD\" there are no build folders."
+echo
+main_menu
+return
+fi
+return
+}
+ my5
+    break ;;          
+              #End function build .img
+
+          8) clear
+             my6(){
+             file_size=${dir}/pack_img_dat
+             check_dat="222"
+             echo
+             echo "      Menu: Build and convert to .dat"
+             echo
+select img in "Build .img -> .dat" "Build .img with size input -> .dat" "Build .img with build folder size -> .dat" "Convert \".img\" to \".dat\"" "Exit to main menu" "Exit"; do
+case $REPLY in 
+         1 ) clear
+             erof="0"
+             set -- $erof
+              nn
+              pack_dat
+              break ;;
+         2 )
+             clear
+              erof="0"
+              set -- $erof
+              nn
+              pack_dat_my
+              break ;;
+         3 ) clear
+             erof="0"
+             set -- $erof
+             nn
+             pack_dat_new
+              break ;;
+         4 )  clear
+              my_k(){
+             echo 
+             echo "..Go to the folder where the file is located \".img\", For example: cd /sdcard"
+read b && $b
+if [ $(echo $?) -eq 0 ]; then
+clear
+dir_dat=/data/local/binary
+nd=$(echo $b | busybox awk '{ print $2 }')
+v=$(for sparse in $(busybox find . -maxdepth 1 -name '*.img' -type f 2> /dev/null); do
+if [ ! -z "$(busybox hexdump -C -n 20000 "$sparse" | busybox grep -Eo '3a ff 26 ed|30 50 4c 41')" -o ! -z "$(busybox hexdump -C -n 2000 "$sparse" | busybox awk '/00000430/ { print $10$11 }' | busybox grep -o "53ef")" -o ! -z "$(busybox hexdump -C -n 2000 "$sparse" | busybox awk '/00000400/ { print $2$3$4$5 }' | busybox grep -o "e2e1f5e0")" ]; then
+echo "$sparse"
+fi
+done)
+
+set -- $v
+
+if [ ! -z "$v" ]; then
+echo
+echo ".....Select file to convert to \".dat\":"
+echo
+select menu in $v "Exit to main menu"; do
+case $REPLY in
+                  [1-9]*) i="$#"
+                      let i=i+1
+                      file=$(echo "$@" | busybox cut -d' ' -f"$REPLY")
+         if [ ! -z "$file" -a "$REPLY" -lt "$i" ]; then
+         clear
+           br_check="false"
+         . ${dir_dat}/konvert_img_dat
+         main_menu
+         return
+         break 
+         elif [ "$REPLY" == "$i" ]; then
+         clear
+        main_menu
+        return
+        break
+        else
+        clear
+        echo
+            echo "      Enter the numbers corresponding to the menu."
+         my_k
+         return
+         break
+         fi
+         break;;
+      *) clear
+         echo
+            echo "      Enter the numbers corresponding to the menu."
+         my_k
+         return
+         break;;
+  esac
+ done
+ else
+ echo
+ echo ....."In the \"$nd\" folder there are no \".img\" images for conversion."
+ echo
+ main_menu
+return
+ fi
+echo
+else
+echo
+echo .....error: Error navigating to directory!
+echo
+echo Enter the directory correctly!
+echo
+my_k
+return
+fi
+return
+}
+ my_k
+      break ;;
+         5 ) clear
+             main_menu
+             break ;;
+         6 ) clear
+             break ;;
+         *) echo "Enter the number corresponding to the Menu items: Build and convert to .dat." ;;
+    esac
+done
+return
+}
+ my6
+     break ;;
+         9) clear
+            my7(){
+            file_size=${dir}/pack_img_br
+            check_dat="222"
+            echo
+            echo "      Menu: Build and convert to .br"
+            echo
+select img in "Build .img -> .br" "Build .img with size input -> .br" "Build .img with build folder size -> .br" "Convert .img to .br" "Convert .dat to .br" "Exit to main menu" "Exit"; do
+case $REPLY in
+          1 ) clear
+              erof="0"
+              set -- $erof
+              nn
+             
+             pack_dat
+             break ;;
+         2 ) clear
+             erof="0"
+             set -- $erof
+              nn
+             pack_dat_my
+             break ;;
+         3 ) clear
+             erof="0"
+             set -- $erof
+              nn
+             pack_dat_new
+             break ;; 
+         4 ) clear
+             my_imgbr()
+             {
+             echo 
+             echo "..Go to the folder where the file is located \".img\", For example: cd /sdcard"
+read b && $b
+if [ $(echo $?) -eq 0 ]; then
+clear
+dir_dat=/data/local/binary
+nd=$(echo $b | busybox awk '{ print $2 }')
+v=$(for sparse in $(busybox find . -maxdepth 1 -name '*.img' -type f 2> /dev/null); do
+if [ ! -z "$(busybox hexdump -C -n 20000 "$sparse" | busybox grep -Eo '3a ff 26 ed|30 50 4c 41')" -o ! -z "$(busybox hexdump -C -n 2000 "$sparse" | busybox awk '/00000430/ { print $10$11 }' | busybox grep -o "53ef")" -o ! -z "$(busybox hexdump -C -n 2000 "$sparse" | busybox awk '/00000400/ { print $2$3$4$5 }' | busybox grep -o "e2e1f5e0")" ]; then
+echo "$sparse"
+fi
+done)
+
+set -- $v
+
+if [ ! -z "$v" ]; then
+echo
+echo ".....Select file to convert:"
+echo
+select menu in $v "Exit to main menu"; do
+case $REPLY in
+                  [1-9]*) i="$#"
+                      let i=i+1
+                      file=$(echo "$@" | busybox cut -d' ' -f"$REPLY")
+         if [ ! -z "$file" -a "$REPLY" -lt "$i" ]; then
+         clear
+         br_check="true"
+       . ${dir_dat}/konvert_img_dat
+         main_menu
+         return
+         break 
+         elif [ "$REPLY" == "$i" ]; then
+         clear
+        main_menu
+        return
+        break
+        else
+        clear
+        echo
+            echo "      Enter the numbers corresponding to the menu."
+         my_imgbr
+         return
+         break
+         fi
+         break;;
+      *) clear
+         echo
+            echo "      Enter the numbers corresponding to the menu."
+         my_imgbr
+         return
+         break;;
+  esac
+ done
+ else
+ echo
+ echo ....."In the \"$nd\" folder there are no \".img\" images for conversion."
+ echo
+ main_menu
+return
+ fi
+echo
+else
+echo
+echo ".....error: Error navigating to directory!"
+echo
+echo ".....Enter the directory correctly!"
+echo
+my_imgbr
+return
+fi
+return
+}
+ my_imgbr
+  break ;;
+  
+         5 ) clear
+             my_kbr(){
+             
+             echo 
+             echo "..Go to the folder where the file is located \".dat\", For example: cd /sdcard"
+read b && $b
+if [ $(echo $?) -eq 0 ]; then
+clear
+dir_dat=/data/local/binary
+nd=$(echo $b | busybox awk '{ print $2 }')
+v=$(busybox find . -maxdepth 1 -name '*.new.dat' -type f 2> /dev/null | busybox sed 's!./!!')
+
+set -- $v
+
+if [ ! -z "$v" ]; then
+echo
+echo ".....Select file to convert:"
+echo
+select menu in $v "Exit to main menu"; do
+case $REPLY in
+                  [1-9]*) i="$#"
+                      let i=i+1
+                      file=$(echo "$@" | busybox cut -d' ' -f"$REPLY")
+         if [ ! -z "$file" -a "$REPLY" -lt "$i" ]; then
+         clear
+       . ${dir_dat}/konvert_dat_br
+         main_menu
+         return
+         break 
+         elif [ "$REPLY" == "$i" ]; then
+         clear
+        main_menu
+        return
+        break
+        else
+        clear
+        echo
+            echo "      Enter the numbers corresponding to the menu."
+         my_kbr
+         return
+         break
+         fi
+         break;;
+      *) clear
+         echo
+            echo "      Enter the numbers corresponding to the menu."
+         my_kbr
+         return
+         break;;
+  esac
+ done
+ else
+ echo
+ echo ....."In the \"$nd\" folder there are no \".dat\" images for conversion."
+ echo
+ main_menu
+return
+ fi
+echo
+else
+echo
+echo ".....error: Error navigating to directory!"
+echo
+echo ".....Enter the directory correctly!"
+echo
+my_kbr
+return
+fi
+return
+}
+ my_kbr
+  break ;;
+         6 ) clear
+             main_menu
+             break ;;
+         7 ) clear
+             break ;;
+         *) echo "Enter the number corresponding to the Menu items: Convert new.dat to .br" ;;
+    esac
+done
+return
+}
+my7
+break ;;
+          10) clear
+             my8(){
+             echo 
+             echo "      Menu: Conversion sparse > raw; raw > sparse"
+             echo
+select img in "Convert .img(raw) to .img (sparse)" "Convert .img(sparse) to .img(raw)" "Exit to main menu" "Exit"; do
+case $REPLY in 
+         1 ) clear
+             konv_img(){
+             echo 
+             echo "..Go to the folder where the file is located \".img(raw)\", For example: cd /sdcard"
+read b && $b
+if [ $(echo $?) -eq 0 ]; then
+clear
+dir_dat=/data/local/binary
+nd=$(echo $b | busybox awk '{ print $2 }' | busybox sed 's!^/!!')
+#v=$(busybox find . -maxdepth 1 -name 'vendor*.img' -type f -o -name 'system*.img' -type f | busybox sed 's!./!!')
+
+ #v=$(for raw in $(busybox find . -maxdepth 1 -name 'vendor*.img' -type f -o -name 'system*.img' -type f 2> /dev/null); do
+ #if [ -z "$(busybox hexdump -C -n 4 "$raw" | busybox grep '3a ff 26 ed')" ]; then
+ #echo "$raw"
+ #fi
+ #done)
+
+ v=$(for raw in $(busybox find -maxdepth 1 -name '*.img' -type f | busybox sed 's!./!!'); do
+    if [ -z "$(busybox hexdump -C -n 2000 "$raw" | busybox grep -E '3a ff 26 ed')" -a ! -z "$(busybox hexdump -C -n 2000 "$raw" | busybox awk '/00000430/ { print $10$11 }' | busybox grep "53ef")" ]; then
+
+       echo "$raw"
+  elif [ -z "$(busybox hexdump -C -n 2000 "$raw" | busybox grep '3a ff 26 ed')" -a ! -z "$(busybox hexdump -C -n 20000 "$raw" | busybox grep "30 50 4c 41")" ]; then
+       echo "$raw"
+  elif [ -z "$(busybox hexdump -C -n 2000 "$raw" | busybox grep '3a ff 26 ed')" -a ! -z "$(busybox hexdump -C -n 2000 "$raw" | busybox grep -o "e2 e1 f5 e0")" ]; then
+       echo "$raw"
+     fi
+     done)
+
+ set -- $v
+
+ if [ ! -z "$v" ]; then
+ echo
+ echo "...We are in the folder: /$nd"
+ echo "...Shown only \"raw\" images"
+ free_space="$(busybox df -h "$PWD" | busybox tail -1 |  busybox awk '{ print $(NF-2) }')"
+ echo "...In /${nd} free: $free_space"
+ echo
+
+ echo ".....Select file to convert to \"sparse\":"
+ echo
+select menu in $v "Exit to main menu"; do
+case $REPLY in
+                  [1-9]*) i="$#"
+                      let i=i+1
+                      file=$(echo "$@" | busybox cut -d' ' -f"$REPLY")
+         if [ ! -z "$file" -a "$REPLY" -lt "$i" ]; then
+         clear
+       . ${dir_dat}/konvert_raw_sparse
+         main_menu
+         return
+         break 
+         elif [ "$REPLY" == "$i" ]; then
+         clear
+        main_menu
+        return
+        break
+        else
+        clear
+        echo
+            echo "      Enter the numbers corresponding to the menu."
+         konv_img
+         return
+         break
+         fi
+         break;;
+      *) clear
+         echo
+            echo "      Enter the numbers corresponding to the menu."
+         konv_img
+         return
+         break;;
+  esac
+ done
+ else
+ echo
+ echo ..."In the \"/$nd\" folder there are no \"raw\" images for conversion."
+ echo
+ main_menu
+return
+ fi
+echo
+else
+echo
+echo .....error: Error navigating to directory!
+echo
+echo Enter the directory correctly!
+echo
+konv_img
+return
+fi
+return
+}
+  konv_img
+      break ;;
+         2 ) clear
+             konv_img(){
+             echo 
+             echo "..Go to the folder where the file is located \".img(sparse)\", For example: cd /sdcard:"
+read b && $b
+if [ $(echo $?) -eq 0 ]; then
+clear
+dir_dat=/data/local/binary
+nd=$(echo $b | busybox awk '{ print $2 }' | busybox sed 's!^/!!')
+v=$(for sparse in $(busybox find . -maxdepth 1 -name '*.img' -type f 2> /dev/null); do
+if [ ! -z "$(busybox hexdump -C -n 2000 "$sparse" | busybox grep '3a ff 26 ed')" ]; then
+echo "$sparse"
+fi
+done)
+
+set -- $v
+
+if [ ! -z "$v" ]; then
+ echo
+ echo "...We are in the folder: /$nd"
+ echo "...Shown only \"sparse\" images"
+ free_space="$(busybox df -h "$PWD" | busybox tail -1 |  busybox awk '{ print $(NF-2) }')"
+ echo "...In /${nd} free: $free_space"
+ echo
+ echo ".....Select file to convert to \"raw\":"
+ echo
+ select menu in $v "Exit to main menu"; do
+case $REPLY in
+    [1-9]*) i="$#"
+                      let i=i+1
+                      file=$(echo "$@" | busybox cut -d' ' -f"$REPLY")
+         if [ ! -z "$file" -a "$REPLY" -lt "$i" ]; then
+         clear
+       . ${dir_dat}/konvert_sparse_raw
+         main_menu
+         return
+         break 
+         elif [ "$REPLY" == "$i" ]; then
+         clear
+        main_menu
+        return
+        break
+        else
+        clear
+        echo
+            echo "      Enter the numbers corresponding to the menu."
+         konv_img
+         return
+         break
+         fi
+         break;;
+      *) clear
+         echo
+            echo "      Enter the numbers corresponding to the menu."
+         konv_img
+         return
+         break;;
+  esac
+ done
+ else
+ echo
+ echo ..."In the \"/$nd\" folder there are no \"sparse\" images for conversion."
+ echo
+ main_menu
+return
+ fi
+echo
+else
+echo
+echo .....error: Error navigating to directory!
+echo
+echo Enter the directory correctly!
+echo
+konv_img
+return
+fi
+return
+}
+   konv_img
+       break ;;
+         3 ) clear
+             main_menu
+             break ;;
+         4 ) clear
+             break ;;
+         *) echo "Enter the number corresponding to the Menu items: Conversion sparse > raw; raw > sparse" ;;
+    esac
+done
+return
+}
+my8
+break ;;
+         11) clear
+             my2()
+{
+            echo
+            echo "      Menu: Other Tools"
+            echo
+           
+select img in "Actions with the AVB structure" "Convert .sin -> .img" "Convert .lz4|.zst|.xz|.lzma" "Glue the image from the firmware under Qfil" "Split super.img into parts" "Extract images from payload. bin" "Extracting images from UPDATE.APP" "Creating an image from the memory block of the current firmware" "Unpacking (converting) .ozip" "Creating tar.md5" "Unpacking .img firmware" "Unpacking .ofp|.ops firmware" "Exit to main menu" "Exit"; do
+case $REPLY in
+          1 ) clear
+              read_avb()
+              {
+              echo
+              select img in "Patch vbmeta" "Viewing the structure of an AVB file" "Extracting the public AVB signing key" "Creating your own AVB signing key" "Replacing the public key in the image" "Signing boot(recovery).img with key selection" "Exit to main menu" "Exit"; do
+ case $REPLY in
+          1 ) clear
+          
+          pvbm()
+ {
+ clear
+ echo
+ echo ".....Looking for values for the patch..."
+ 
+ true_vb()
+{
+ tru="$(avbtool info_image --image "$file" | busybox awk '/Flags:/ NR == 1 {if($2 == 3) { print $2 }}')"
+ rolbak="$(avbtool info_image --image "$file" | busybox awk '/Rollback Index:/ NR == 1 {if($3 == 0) { print $3 }}')"
+ return
+}
+ #true_vb
+
+ #if [ "$tru" != 3 -o "$rolbak" != 0 ]; then
+ real_nd="$(echo /"$nd" | busybox grep -o "/dev/block")"
+ if [ -z "$real_nd" ]; then
+
+ file_name="$(echo "$file" | busybox sed 's!.img$!!')"
+ file_orig="$file"
+ file_path="${file_name}_path.img"
+ busybox cp -f "$file_orig" "$file_path"
+ #python39 /data/local/binary/bin_system/int.py "$file" "7b" "03"
+ #echo '7b: 03' | xxd -r - "$file"
+ else
+ file_orig="$file"
+ file_path="$file"
+ fi
+
+ #for vb in "78: $num_path" "74: 00000000" "7c: 00000000"; do
+ 
+ echo "78: $num_path" | /data/local/binary/xxd -r - "$file_path"
+ 
+ #done
+
+ if [ $(echo $?) -eq 0 ]; then
+ file="$file_path"
+ true_vb
+
+ #if [ "$tru" == 3 -a "$rolbak" == 0 ]; then
+ if [ -z "$real_nd" ]; then
+ echo
+ echo ".....Successfully navigated /"$nd"/"$file_orig" -> /"$nd"/"$file_path""
+ echo ".....Patch status:  $file_vbm"
+ echo
+ else
+ echo
+ echo ".....Successfully navigated /"$nd"/"$file_orig""
+ echo ".....Patch status:  $file_vbm"
+ echo
+ fi
+ else
+ echo
+ echo ".....Patch error /"$nd"/"$file""
+ echo
+ #fi
+ fi
+ #else
+ #echo
+ #$echo ".....The file /"$nd"/"$file" is already patched!"
+ #echo
+ #fi
+}
+             vbmeta()
+{
+              echo
+              echo "..Go to the folder where the file is located \"vbmeta.img\", For example: cd /sdcard"
+ read b && $b
+ if [ $(echo $?) -eq 0 ]; then
+ clear
+ nd=$(echo $b | busybox awk '{ print $2 }' | busybox sed 's!^/!!')
+
+ v=$(for a in $(busybox find . -maxdepth 1 -name "*.img" -type f -o -name "vbmeta*" | busybox sed 's!./!!'); do
+    
+  if [ ! -z "$(busybox hexdump -C -n 20 "$a" 2> /dev/null | busybox grep -o "41 56 42 30")" ]; then
+       echo "$a"
+     fi
+     done)
+
+ set -- $v
+
+ if [ ! -z "$v" ]; then
+ echo
+ echo ".....Select file for patch:"
+ echo
+ select menu in $v "Exit to main menu"; do
+case $REPLY in
+                 [1-9]*) i="$#"
+                      let i=i+1
+                      file=$(echo "$@" | busybox cut -d' ' -f"$REPLY")
+         if [ ! -z "$file" -a "$REPLY" -lt "$i" ]; then
+ #clear
+ 
+ 
+ choice_vb()
+{
+ clear
+ v=$(echo "Disable_dm_verity" "Disable_dm_verification" "Disable_dm_verity+Disable_dm_verification")
+
+ set -- $v
+ echo
+ echo ".....Select vbmeta patch:"
+ echo
+select menu in $v "Exit to main menu"; do
+case $REPLY in
+                 [1-9]*) i="$#"
+                      let i=i+1
+                      file_vbm=$(echo "$@" | busybox cut -d' ' -f"$REPLY")
+         if [ ! -z "$file_vbm" -a "$REPLY" -lt "$i" ]; then
+if [ "$file_vbm" == "Disable_dm_verity" ]; then
+ num_path="00000001"
+ pvbm
+elif [ "$file_vbm" == "Disable_dm_verification" ]; then
+ num_path="00000002"
+ pvbm
+elif [ "$file_vbm" == "Disable_dm_verity+Disable_dm_verification" ]; then
+ num_path="00000003"
+ pvbm
+fi
+       main_menu
+         return
+         break 
+         elif [ "$REPLY" == "$i" ]; then
+        clear
+        main_menu
+        return
+        break
+        else
+        clear
+        echo
+            echo "      Enter the numbers corresponding to the menu."
+         choice_vb
+         return
+         break
+         fi
+         break;;
+   *) clear
+        echo
+            echo "      Enter the numbers corresponding to the menu."
+         choice_vb
+         return
+         break;;
+  esac
+ done
+return
+}
+ choice_vb
+   #main_menu
+        return
+         break 
+         elif [ "$REPLY" == "$i" ]; then
+         clear
+        main_menu
+        return
+        break
+        else
+        clear
+        echo
+            echo "      Enter the numbers corresponding to the menu."
+         vbmeta
+         return
+         break
+         fi
+         break;;
+   *) clear
+        echo
+            echo "      Enter the numbers corresponding to the menu."
+         vbmeta
+         return
+         break ;;
+  esac
+ done
+ else
+ echo
+ echo ....."In the \"/$nd\" folder there are no \"vbmeta\" files for the patch."
+ echo
+ main_menu
+return
+fi
+echo
+else
+echo
+echo .....error: Error navigating to directory!
+echo
+echo Enter the directory correctly!
+echo
+vbmeta
+return
+fi
+return
+}
+ vbmeta
+  break ;;
+          2 ) clear
+              vbmeta_info()
+{
+              echo
+              echo "..Go to the folder where the file is located \"*.img\", For example: cd /sdcard"
+ read b && $b
+ if [ $(echo $?) -eq 0 ]; then
+ clear
+ echo
+ echo ".....Search files..."
+ nd=$(echo $b | busybox awk '{ print $2 }' | busybox sed 's!^/!!')
+
+ v=$(for a in $(busybox find -maxdepth 1 -name "*.img" -o -name '*.win' -type f -o -name "vbmeta*" -a -type l | busybox sed 's!./!!'); do
+    
+  #if [ ! -z "$(busybox hexdump -C -n 20 "$a" 2> /dev/null | busybox grep -o "41 56 42 30")" -o ! -z "$(busybox hexdump -C -n 2000 "$a" 2> /dev/null | busybox grep '3a ff 26 ed')" -o ! -z "$(busybox hexdump -C -n 2000 "$a" 2> /dev/null | busybox awk '/00000430/ { print $10$11 }' | busybox grep "53ef")" -o ! -z "$(busybox hexdump -C -n 2000 "$a" 2> /dev/null | busybox grep -o '41 4e 44 52 4f 49 44 21')" -o ! -z "$(busybox hexdump -C -n 2000 "$a" 2> /dev/null | busybox grep -o 'e2 e1 f5 e0')" -o ! -z "$(busybox hexdump -C -n 2000 "$a" 2> /dev/null | busybox grep -o '10 20 f5 f2 ')" ]; then
+       echo "$a"
+     #fi
+     done)
+
+ set -- $v
+
+ if [ ! -z "$v" ]; then
+ clear
+ echo
+ echo ".....Choose File:"
+ echo
+ select menu in $v "Exit to main menu"; do
+case $REPLY in
+                  [1-9]*) i="$#"
+                      let i=i+1
+                      file=$(echo "$@" | busybox cut -d' ' -f"$REPLY")
+         if [ ! -z "$file" -a "$REPLY" -lt "$i" ]; then
+
+ t="     File: /$nd/$file"
+ g=${#t}
+ ggg="$(busybox expr "$g" - 6)"
+ gg="$(busybox seq -s- "$ggg" | busybox tr -d '[:digit:]')"
+ #gg1="$(busybox seq -s- 28 | busybox tr -d '[:digit:]')"
+ clear
+ echo
+ echo
+ echo "    $gg"
+ echo "$t"  
+ echo "    $gg"
+ #echo "     ------------------------------"
+ #echo "     File: /"$nd"/"$file""
+ #echo "     ------------------------------"
+ echo
+f_avb=/data/local/binary/avb.txt
+ avbtool info_image --image "$file" &> "$f_avb"
+ if [ ! -z "$(busybox cat "$f_avb" | busybox grep -o "Minimum libavb version:")" ]; then
+ busybox cat "$f_avb"
+ else
+ echo "     AVB structure not found!"
+ fi
+ echo
+ echo "    $gg"
+ echo
+ busybox rm -f "$f_avb"
+         main_menu
+         return
+         break 
+         elif [ "$REPLY" == "$i" ]; then
+         clear
+        main_menu
+        return
+        break
+        else
+        clear
+        echo
+            echo "      Enter the numbers corresponding to the menu."
+         vbmeta_info
+         return
+         break
+         fi
+         break;;
+   *) clear
+        echo
+            echo "      Enter the numbers corresponding to the menu."
+         vbmeta_info
+         return
+         break ;;
+  esac
+ done
+ else
+ echo
+ echo ....."In the folder \"/$nd\" there is no files \"*.img\""
+ echo
+ main_menu
+return
+fi
+echo
+else
+echo
+echo .....error: Error navigating to directory!
+echo
+echo Enter the directory correctly!
+echo
+vbmeta_info
+return
+fi
+return
+}
+ vbmeta_info
+   break ;;
+   
+   
+          3 ) clear
+              unset aik_mob
+              extract_key()
+{
+              echo
+              echo "..Go to the folder where the file is located \"*.img\", For example: cd /sdcard"
+ read b && $b
+ if [ $(echo $?) -eq 0 ]; then
+ clear
+ echo
+ echo ".....Search files..."
+ nd=$(echo $b | busybox awk '{ print $2 }' | busybox sed 's!^/!!')
+
+ v=$(for a in $(busybox find . -maxdepth 1 -name "*.img" -o -name "*.win" -type f | busybox sed 's!./!!'); do
+    
+  #if [ ! -z "$(busybox hexdump -C -n 20 "$a" 2> /dev/null | busybox grep -o "41 56 42 30")" -o ! -z "$(busybox hexdump -C -n 2000 "$a" 2> /dev/null | busybox grep '3a ff 26 ed')" -o ! -z "$(busybox hexdump -C -n 2000 "$a" 2> /dev/null | busybox awk '/00000430/ { print $10$11 }' | busybox grep "53ef")" -o ! -z "$(busybox hexdump -C -n 2000 "$a" 2> /dev/null | busybox grep -o '41 4e 44 52 4f 49 44 21')" -o ! -z "$(busybox hexdump -C -n 2000 "$a" | busybox grep -o 'e2 e1 f5 e0')" -o ! -z "$(busybox hexdump -C -n 2000 "$a" | busybox grep -o '10 20 f5 f2 ')" ]; then
+       echo "$a"
+     #fi
+     done)
+
+ set -- $v
+
+ if [ ! -z "$v" ]; then
+ clear
+ echo
+ echo ".....Choose File:"
+ echo
+ select menu in $v "Exit to main menu"; do
+case $REPLY in
+                  [1-9]*) i="$#"
+                      let i=i+1
+                      file=$(echo "$@" | busybox cut -d' ' -f"$REPLY")
+         if [ ! -z "$file" -a "$REPLY" -lt "$i" ]; then
+          clear
+         . /data/local/binary/extract_key
+
+         main_menu
+         return
+         break 
+         elif [ "$REPLY" == "$i" ]; then
+         clear
+        main_menu
+        return
+        break
+        else
+        clear
+        echo
+            echo "      Enter the numbers corresponding to the menu."
+         extract_key
+         return
+         break
+         fi
+         break;;
+   *) clear
+        echo
+            echo "      Enter the numbers corresponding to the menu."
+         extract_key
+         return
+         break ;;
+  esac
+ done
+ else
+ echo
+ echo ....."In the folder \"/$nd\" there is no files \"*.img\""
+ echo
+ main_menu
+return
+fi
+echo
+else
+echo
+echo .....error: Error navigating to directory!
+echo
+echo Enter the directory correctly!
+echo
+extract_key
+return
+fi
+return
+}
+ extract_key
+   break ;;
+      4 ) clear
+         gen_key()
+{
+v=$(echo "RSA2048" "RSA4096" "RSA8192")
+
+set -- $v
+echo
+echo ".....Select an algorithm for creating a key:"
+echo
+select menu in $v "Exit to main menu"; do
+case $REPLY in
+                 [1-9]*) i="$#"
+                      let i=i+1
+                      file=$(echo "$@" | busybox cut -d' ' -f"$REPLY")
+         if [ ! -z "$file" -a "$REPLY" -lt "$i" ]; then
+ rs="$(echo "$file" | busybox sed 's!RSA!!')"
+ out_gen_key=/data/local/UnpackerSystem/gen_keys
+ mkdir "$out_gen_key" 2> /dev/null
+ time="$(busybox date +%H_%M_%S)"
+         clear
+ echo
+ echo ".....Creating the ${file}_${time}_private.pem and ${file}_${time}_pubkey.pem keys..."
+
+         openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:"$rs" -outform PEM -out "$out_gen_key"/"$file"_${time}_private.pem &> /dev/null
+if [ $(echo $?) -eq 0 ]; then
+
+echo
+echo ".....Successfully created "$file"_${time}_private.pem "
+echo ".....Saved: "$out_gen_key"/"$file"_${time}_private.pem"
+
+avbtool extract_public_key --key "$out_gen_key"/"$file"_${time}_private.pem --output "$out_gen_key"/"$file"_${time}_pubkey.pem
+if [ $(echo $?) -eq 0 ]; then
+sleep 1
+echo
+echo ".....Successfully created "$file"_${time}_pubkey.pem"
+echo ".....Saved: "$out_gen_key"/"$file"_${time}_pubkey.pem"
+echo
+fi
+fi
+
+         main_menu
+         return
+         break 
+         elif [ "$REPLY" == "$i" ]; then
+         clear
+        main_menu
+        return
+        break
+        else
+        clear
+        echo
+            echo "      Enter the numbers corresponding to the menu."
+         gen_key
+         return
+         break
+         fi
+         break;;
+   *) clear
+        echo
+            echo "      Enter the numbers corresponding to the menu."
+         gen_key
+         return
+         break;;
+  esac
+ done
+return
+}
+ gen_key
+   break ;;
+      5 ) clear
+          . /data/local/binary/rem_key
+          break ;;
+      6 ) clear
+          . image_sign
+          #main_menu
+          break ;;
+      7 ) clear
+               main_menu
+               break ;;
+      8 ) clear
+          break ;;
+      
+         * ) clear
+            echo
+            echo "      Enter the numbers corresponding to this menu."
+              read_avb
+              return
+              break ;;
+    esac
+done
+return
+}
+read_avb
+  break ;;
+          
+          2 ) clear
+
+
+sin_img()
+{
+              echo
+              echo "..Go to the folder where the file is located \".sin\", For example: cd /sdcard"
+read b && $b
+if [ $(echo $?) -eq 0 ]; then
+clear
+dir_dat=/data/local/binary
+nd=$(echo $b | busybox awk '{ print $2 }' | busybox sed 's!^/!!')
+v=$(busybox find . -maxdepth 1 -name '*.sin' 2> /dev/null | busybox sed 's!./!!')
+
+konv()
+{
+         echo
+         echo ".....Conversion..."
+         echo
+         if [ ! -z "$(echo "$file" | busybox grep ".sin$")" ]; then
+        
+        name_sin="$(busybox basename ${file%%.*})"
+   
+        sony_dump "$PWD" "$file"
+        if [ $(echo $?) -eq 0 ]; then
+      num="$(busybox find -maxdepth 1 | busybox grep -Ev ".sin$|.crt$|.img$|.log$|.txt$" | busybox grep "$name_sin")"
+       busybox mv -f "$num" "$name_sin"_sin.img && file=/"$nd"/"$name_sin"_sin.img
+          echo
+         echo ".....Successfully completed!"
+         echo ".....File received $file"
+         echo
+         else
+          echo
+         echo ".....Error. Error during conversion!"
+         echo
+         fi
+         fi
+return
+}
+
+set -- $v
+
+if [ ! -z "$v" ]; then
+echo
+echo ".....Choose File:"
+echo
+select menu in $v "Exit to main menu"; do
+case $REPLY in
+                  [1-9]*) i="$#"
+                      let i=i+1
+                      file=$(echo "$@" | busybox cut -d' ' -f"$REPLY")
+         if [ ! -z "$file" -a "$REPLY" -lt "$i" ]; then
+         clear
+         konv
+         main_menu
+         return
+         break 
+         elif [ "$REPLY" == "$i" ]; then
+         clear
+        main_menu
+        return
+        break
+        else
+        clear
+        echo
+            echo "      Enter the numbers corresponding to the menu."
+         sin_img
+         return
+         break
+         fi
+         break;;
+   *) clear
+        echo
+            echo "      Enter the numbers corresponding to the menu."
+         sin_img
+         return
+         break;;
+  esac
+ done
+ else
+ echo
+ echo ....."In the folder \"/$nd\" there is no files \".sin\"."
+ echo
+ main_menu
+return
+ fi
+echo
+else
+echo
+echo .....error: Error navigating to directory!
+echo
+echo Enter the directory correctly!
+echo
+sin_img
+return
+fi
+return
+}
+sin_img
+  break ;;
+        
+          3 ) clear
+             echo
+            echo "      Menu: Conversion .lz4|.zst|.xz|.lzma"
+            echo
+select img in "Extract from .lz4|.zst|.xz|.lzma" "Compress .img to .lz4|.zst|.xz|.lzma" "Exit to main menu" "Exit"; do
+case $REPLY in 
+         1 ) clear
+             
+             decomp_lz4()
+{
+              echo
+              echo "..Go to the folder where the file is located .lz4|.zst||.xz|.lzma, For example: cd /sdcard"
+read b && $b
+if [ $(echo $?) -eq 0 ]; then
+clear
+dir_dat=/data/local/binary
+nd=$(echo $b | busybox awk '{ print $2 }'| busybox sed 's!^/!!')
+
+#v=$(busybox find . -maxdepth 1 -name '*.lz4' 2> /dev/null | busybox sed 's!./!!')
+
+v=$(for fol in $(busybox find . -maxdepth 1 -name "*.lz4" -o -name "*.lzma" -o -name "*.zst" -o -name "*.xz" -type f); do
+mag="$(/data/local/binary/file -m /data/local/binary/magic "$fol" 2> /dev/null | busybox awk '{ print $2 }')"
+if [ "$mag" == "lzma" -o  "$mag" == "lz4" -o "$mag" == "xz" -o ! -z "$(busybox hexdump -C -n 2000 "$fol" 2> /dev/null | busybox grep -o "28 b5 2f fd" 2> /dev/null)" ]; then
+echo "$fol"
+ fi
+done)
+
+konv()
+{       
+  o="$(busybox basename $file)"
+  o_name=${o%.*}
+  file_or="$(echo "$file" | busybox sed 's!^./!!')"
+  file_print="$(echo "$o_name" | busybox sed 's!^./!!')"
+        echo
+        echo ".....Extract from /$nd/$file_or..."
+        echo
+         #lz4 -df --no-sparse "$file"
+         
+    if [ -z "$(getprop ro.product.cpu.abilist64)" ]; then
+        zstd32 -df "$file"
+    else
+        zstd64 -df "$file"
+   fi
+  
+         if [ "$?" -eq "0" ]; then
+         echo
+         echo ".....Successfully completed!"
+         echo ".....File received: /$nd/${file_print}"
+         echo
+         return
+         else
+         echo
+         echo ".....Error during extraction!"
+         echo
+         return
+         fi
+return
+}
+
+set -- $v
+
+if [ ! -z "$v" ]; then
+echo
+echo ".....Select file to convert:"
+echo
+select menu in $v "Exit to main menu"; do
+case $REPLY in
+                 [1-9]*) i="$#"
+                      let i=i+1
+                      file=$(echo "$@" | busybox cut -d' ' -f"$REPLY")
+         if [ ! -z "$file" -a "$REPLY" -lt "$i" ]; then
+         clear
+         konv
+         main_menu
+         return
+         break 
+         elif [ "$REPLY" == "$i" ]; then
+         clear
+        main_menu
+        return
+        break
+        else
+        clear
+        echo
+            echo "      Enter the numbers corresponding to the menu."
+         decomp_lz4
+         return
+         break
+         fi
+         break;;
+   *) clear
+        echo
+            echo "      Enter the numbers corresponding to the menu."
+         decomp_lz4
+         return
+         break;;
+  esac
+ done
+ else
+ echo
+ echo ....."In the folder \"/$nd\" there is no files to extract."
+ echo
+ main_menu
+return
+ fi
+echo
+else
+echo
+echo .....error: Error navigating to directory!
+echo
+echo Enter the directory correctly!
+echo
+decomp_lz4
+return
+fi
+return
+}
+decomp_lz4
+  break ;;
+           2) clear
+             
+             comp_lz4()
+{
+              echo
+              echo "..Go to the folder where the file is located \".img\", For example: cd /sdcard"
+read b && $b
+if [ $(echo $?) -eq 0 ]; then
+clear
+dir_dat=/data/local/binary
+nd=$(echo $b | busybox awk '{ print $2 }' | busybox sed 's!^/!!')
+v=$(busybox find . -maxdepth 1 -name '*.img' 2> /dev/null | busybox sed 's!./!!')
+
+konv()
+{        
+         clear
+  if [ "$part_name" == "zst" ]; then
+  part_name="zstd"
+  part_print="zst"
+  else
+  part_name="$part_name"
+  part_print="$part_name"
+  fi
+         echo
+         echo ".....Compression in $part_print..."
+         echo
+   if [ -z "$(getprop ro.product.cpu.abilist64)" ]; then
+   zstd32 --adapt --format="$part_name" -f "$file_conv"
+   else
+   zstd64 --adapt --format="$part_name" -f "$file_conv"
+   fi
+     if [ "$?" -eq "0" ]; then
+         echo
+         echo ".....Successfully completed!"
+         echo ".....File received /$nd/${file_conv}.${part_print}"
+         echo
+         return
+         else
+         echo
+         echo ".....Error during conversion!"
+         echo
+         return
+         fi
+return
+}
+
+ part_num()
+{
+ clear
+v=$(echo "lz4" "zst" "xz" lzma)
+
+set -- $v
+echo
+echo ".....Select compression format:"
+echo
+select menu in $v "Exit to main menu"; do
+case $REPLY in
+                 [1-9]*) i="$#"
+                      let i=i+1
+                      file=$(echo "$@" | busybox cut -d' ' -f"$REPLY")
+         if [ ! -z "$file" -a "$REPLY" -lt "$i" ]; then
+
+ part_name="$file"
+ 
+ 
+ konv
+         return
+         break 
+         elif [ "$REPLY" == "$i" ]; then
+        clear
+        #main_menu
+        return
+        break
+        else
+        clear
+        echo
+            echo "      Enter the numbers corresponding to the menu."
+         part_num
+         return
+         break
+         fi
+         break;;
+   *) clear
+        echo
+            echo "      Enter the numbers corresponding to the menu."
+         part_num
+         return
+         break;;
+  esac
+ done
+return
+}
+
+
+
+set -- $v
+
+if [ ! -z "$v" ]; then
+#if [ "$#" -le "10" ]; then
+echo
+echo ".....Select file to convert:"
+echo
+select menu in $v "Exit to main menu"; do
+case $REPLY in
+                 [1-9]*) i="$#"
+                      let i=i+1
+                      file=$(echo "$@" | busybox cut -d' ' -f"$REPLY")
+         if [ ! -z "$file" -a "$REPLY" -lt "$i" ]; then
+         clear
+         file_conv="$file"
+         part_num
+         main_menu
+         return
+         break 
+         elif [ "$REPLY" == "$i" ]; then
+         clear
+        main_menu
+        return
+        break
+        else
+        clear
+        echo
+            echo "      Enter the numbers corresponding to the menu."
+         comp_lz4
+         return
+         break
+         fi
+         break;;
+   *) clear
+        echo
+            echo "      Enter the numbers corresponding to the menu."
+         comp_lz4
+         return
+         break ;;
+  esac
+ done
+ else
+ echo
+ echo ....."In the folder \"/$nd\" there is no files \".img\" for compression."
+ echo
+ main_menu
+return
+fi
+echo
+else
+echo
+echo .....error: Error navigating to directory!
+echo
+echo Enter the directory correctly!
+echo
+comp_lz4
+return
+fi
+return
+}
+comp_lz4
+  break ;;
+           3) clear
+              main_menu
+              break ;;
+           4) clear
+              break;;
+   esac
+    done
+      break ;;
+         4 ) clear
+
+           resize_img()
+{
+ blockcount=$(tune2fs -l ./$obraz | busybox awk '/Block count/ { print $3 }')
+size=$(stat -c %s ./$obraz)
+size_obraz=$(busybox expr $blockcount \* 4096)
+if [ -f ./$obraz ]; then
+busybox test "$size" -lt "$size_obraz"
+if [ "$?" -eq "0" ]; then
+busybox truncate -s $size_obraz ./$obraz
+echo " .....The image received is \"$obraz\" with the size: $size_obraz byte."
+echo ".....Saved in /data/local/UnpackerQfil"
+else
+echo " .....The image received is \"$obraz\" with the size: $size byte."
+echo ".....Saved in /data/local/UnpackerQfil"
+fi
+fi
+}
+
+             qfil_img()
+{
+
+ free_space="$(busybox df -h /data/local/UnpackerQfil | busybox tail -1 |  busybox awk '{ print $(NF-2) }')"
+ echo
+ echo "     Place in the folder: /data/local/UnpackerQfil all files \"super_xx|system_xx|vendor_xx|userdata_xx\" and all files \".xml\" starting with \"rawprogram*\" or files  \"super|system|vendor.img_sparsechunk.*\"."
+ echo
+ echo "...In /data/local/UnpackerQfil free: $free_space"
+ echo
+ select img in "Merge" "Exit to main menu" "Exit"; do
+case $REPLY in 
+         1 ) clear
+             cd /data/local/UnpackerQfil
+ >qfil.log
+ #name_qfil="system_|vendor_|userdata_|.xml"
+ if [ ! -z "$(busybox ls | busybox grep -E "super.img.*[0-9]|system_|vendor_|userdata_|.xml|chunk")" ]; then
+
+ if [ ! -z "$(busybox ls *chunk* 2> /dev/null)" ]; then
+
+ echo
+ echo ".....Files found \"*sparsechunk*\""
+ echo
+ for name in "super" "system" "vendor" "product"; do
+ #name1=$(busybox find . -name "${name}*sparsechunk.*[0-9]" -a ! -name "${name}*sparsechunk.*[0-9][0-9]" | sort -n)
+ name1=$(find . -maxdepth 1 -name "${name}*chunk*" | sort -n | busybox grep -v "[0-9][0-9]")
+ #name2=$(busybox find . -name "${name}*sparsechunk.*[0-9][0-9]" | sort -n)
+ name2=$(find . -maxdepth 1 -name "${name}*chunk*" | sort -n | busybox grep "[0-9][0-9]")
+ if [ ! -z "${name1}"  ]; then
+ mkdir ./output 2> /dev/null
+ 
+ #name_out=$(echo $name1 | busybox sed 's!./!!' | busybox awk -F"img" '{ print $1 }')
+ echo ".....Merging ${name}_chunk.raw.img..."
+ simg2img ${name1} ${name2} ./output/${name}_chunk.raw.img
+ if [ "$?" -eq "0" ]; then
+ #echo
+ echo ".....Successfully created file ${name}_chunk.raw.img"
+ echo ".....Saved in /data/local/UnpackerQfil/output"
+ echo
+ else
+ echo
+ echo ".....Error when merging ${name}_chunk.raw.img!"
+ echo
+ fi
+ fi
+ done
+
+ elif [ ! -z "$(busybox ls super.img*[0-9] 2> /dev/null)" ]; then
+
+ echo
+ echo ".....Files found \"*sparsechunk*\""
+ echo
+ for name in "super"; do
+
+ name1=$(find . -maxdepth 1 -name "super.img*[0-9]" | sort -n | busybox grep -v "[0-9][0-9]")
+
+ name2=$(find . -maxdepth 1 -name "super.img*[0-9]" | sort -n | busybox grep "[0-9][0-9]")
+ if [ ! -z "${name1}"  ]; then
+ mkdir ./output 2> /dev/null
+ 
+ echo ".....Merging ${name}_chunk.raw.img..."
+ simg2img ${name1} ${name2} ./output/${name}_chunk.raw.img
+ if [ "$?" -eq "0" ]; then
+ #echo
+ echo ".....Successfully created file ${name}_chunk.raw.img"
+ echo ".....Saved in /data/local/UnpackerQfil/output"
+ echo
+ else
+ echo
+ echo ".....Error when merging ${name}_chunk.raw.img!"
+ echo
+ fi
+ fi
+ done
+ fi
+
+#new str
+
+ for name in "super" "system" "vendor" "userdata"; do
+ obraz=$name.raw.img
+ #rab_file=$(busybox find -name "rawprogram*" -exec busybox grep -rl "$name" {} \; | busybox sed 's!./!!' | busybox tail -1)
+ 
+ busybox find -name "rawprogram*.xml" -exec busybox grep -rl "$name" {} \; | busybox sed 's!./!!' | while read a; do
+ if [ "$(busybox cat "$a" | busybox grep "$name" | busybox wc -l)" -ge "3" ]; then
+ echo "$a" > rab_file.txt
+ fi
+ done
+ rab_file="$(busybox cat rab_file.txt 2> /dev/null)"
+ 
+
+ 
+
+#check_name="$(busybox cat $rab_file | busybox grep -o "${name}.*" | busybox head -1 | busybox awk '{print $1}' | busybox sed 's!"!!g')"
+
+ #check_name="$(busybox cat $rab_file | busybox awk -v var="$name" -F"filename=" '$2 ~ var { print $2}' | busybox cut -d" " -f1 | busybox sed '1!d; s!"!!g')"
+
+ if [ ! -z $rab_file ]; then
+ check_name="$(busybox cat $rab_file | busybox awk -v var="$name" -F"filename=" '$2 ~ var { print $2}' | busybox cut -d" " -f1 | busybox sed '1!d; s!"!!g')"
+ if [ -f ./$check_name ]; then
+ echo
+ echo ".....File found ${rab_file}"
+ echo ".....Merging $obraz using the file $rab_file..."
+ python31 /data/local/binary/bin_system/qfil1.py /data/local/UnpackerQfil/"$rab_file" "$name"
+  if [ "$?" -eq "0" ]; then
+obraz_real="/data/local/UnpackerQfil/$obraz"
+ opla_r=$(busybox hexdump -C -n 20000 "$obraz_real" | busybox grep -o "30 50 4c 41")
+ sparse_super_r=$(busybox hexdump -C -n 20000 "$obraz_real" | busybox grep -o "3a ff 26 ed")
+ size_obraz_r="$(lpdump --slot=0 "$obraz_real" | busybox awk '/Size: / { print $2 }')"
+ if [ ! -z "$opla_r" -a -z "$sparse_super_r" ]; then
+ busybox truncate -s "$size_obraz_r" "$obraz_real"
+ if [ "$?" -eq "0" ]; then
+ echo
+ echo " .....The image received is \"$obraz\" with the size: $size_obraz_r byte."
+ echo ".....Saved in /data/local/UnpackerQfil"
+ else
+ echo
+ echo "Error when adjusting size $obraz"
+ echo
+fi
+ else
+ resize_img
+ fi
+             else
+             echo ".....An error occurred"
+             echo
+             fi
+            else
+            echo
+            echo ".....No file \"$check_name\" in /data/local/UnpackerQfil" >> qfil.log
+             fi
+             else
+            #clear
+            echo
+            echo ".....The required .xml file is missing in /data/local/UnpackerQfil" >> qfil.log
+             fi
+  done
+             else
+             echo
+             echo ".....there is no files for merging in /data/local/UnpackerQfil"
+             fi
+             main_menu
+             break ;;
+         2 ) clear
+              main_menu
+               break ;;
+         3 ) clear
+               break ;;
+         *) clear
+            echo
+            echo "      Enter the numbers corresponding to this menu."
+              qfil_img
+              break ;;
+    esac
+done
+return
+}
+qfil_img
+break ;;
+         5 ) clear
+         split_super()
+{
+
+ v=$(for a in $(busybox find . -maxdepth 1 -name '*.img' -type f | busybox sed 's!./!!'); do
+    
+  if [ ! -z "$(busybox hexdump -C -n 20000 "$a" | busybox grep -o "30 50 4c 41")" -o ! -z "$(busybox hexdump -C -n 2000 "$a" | grep -o "3a ff 26 ed")" ]; then
+ echo "$a"
+     fi
+     done)
+
+set -- $v
+
+if [ ! -z "$v" ]; then
+echo
+echo ".....Choose File:"
+echo
+select menu in $v "Exit to main menu"; do
+case $REPLY in
+                 [1-9]*) i="$#"
+                      let i=i+1
+                      file=$(echo "$@" | busybox cut -d' ' -f"$REPLY")
+         if [ ! -z "$file" -a "$REPLY" -lt "$i" ]; then
+ clear
+
+if [ ! -z "$(getprop ro.product.cpu.abilist64)" ]; then
+if [ ! -z "$(busybox hexdump -C -n 2000 "$file" | grep -o "3a ff 26 ed")" ]; then
+
+ echo
+ echo "......Conversion $file -> super.raw.img..."
+ echo
+ simg2img "$file" /data/local/UnpackerQfil/super.raw.img
+  if [ "$?" -eq "0" ]; then
+ file="super.raw.img"
+. /data/local/binary/ai
+ else
+ echo
+ echo ".....Error during conversion $file"
+ echo
+ fi
+ else
+ . /data/local/binary/ai
+ fi
+else
+echo
+echo ".....Super.img splitting is not supported on 32-bit firmware!"
+echo
+fi
+         main_menu
+         return
+         break 
+         elif [ "$REPLY" == "$i" ]; then
+         clear
+        main_menu
+        return
+        break
+        else
+        clear
+        echo
+            echo "      Enter the numbers corresponding to the menu."
+         split_super
+         return
+         break
+         fi
+         break;;
+   *) clear
+        echo
+            echo "      Enter the numbers corresponding to the menu."
+         split_super
+         return
+         break ;;
+  esac
+ done
+ else
+ echo
+ echo ....."In the folder \"/data/local/UnpackerQfil\" there is no suitable super.img to split."
+ echo
+ main_menu
+return
+fi
+return
+}
+
+split_selekt()
+{
+echo
+echo "...Place super.img(raw), which needs to be divided, in the folder: /data/local/UnpackerQfil"
+
+ free_space="$(busybox df -h /data/local/UnpackerQfil | busybox tail -1 |  busybox awk '{ print $(NF-2) }')"
+ echo
+ echo "...In /data/local/UnpackerQfil free: $free_space"
+ echo
+ select img in "Split super.img" "Exit to main menu" "Exit"; do
+case $REPLY in 
+         1 ) clear
+             cd /data/local/UnpackerQfil
+             split_super
+             #main_menu
+             break ;;
+         2 ) clear
+              main_menu
+               break ;;
+         3 ) clear
+               break ;;
+         *) clear
+            echo
+            echo "      Enter the numbers corresponding to this menu."
+              split_selekt
+              break ;;
+    esac
+done
+return
+}
+split_selekt
+  break ;;
+         6 ) clear
+             payload()
+{
+              echo
+              echo "         Extract from payload.bin     "
+              echo
+              echo "..Go to the folder where the file is located \"payload.bin\", For example: cd /sdcard"
+read b && $b
+if [ $(echo $?) -eq 0 ]; then
+clear
+nd=$(echo $b | busybox awk '{ print $2 }' | busybox sed 's!^/!!')
+
+ v=$(for a in $(busybox find . -maxdepth 1 -name '*.bin' -type f | busybox sed 's!./!!'); do
+    
+  if [ ! -z "$(busybox hexdump -C -n 20 "$a" | busybox grep -o "43 72 41 55")" ]; then
+       echo "$a"
+     fi
+     done)
+
+set -- $v
+
+if [ ! -z "$v" ]; then
+echo
+echo ".....Choose File:"
+echo
+select menu in $v "Exit to main menu"; do
+case $REPLY in
+                 [1-9]*) i="$#"
+                      let i=i+1
+                      file=$(echo "$@" | busybox cut -d' ' -f"$REPLY")
+         if [ ! -z "$file" -a "$REPLY" -lt "$i" ]; then
+ clear
+ echo
+ echo ".....Cleaning /data/local/UnpackerPayload..."
+ #echo
+  busybox find /data/local/UnpackerPayload/* -maxdepth 1 ! -name "*.bin" -type f -exec busybox rm -f {} \; 2> /dev/null
+              echo
+              echo ".....Extract from /$nd/$file..."
+              echo
+
+if [ -z "$(getprop ro.product.cpu.abilist64)" ]; then
+        otadump="otadump7x32"
+    else
+        otadump="otadump7x64"
+fi
+
+ "$otadump" -c 8 -o /data/local/UnpackerPayload "$file"
+ if [ $(echo $?) -eq 0 ]; then
+ clear
+ echo
+ echo ".....Images successfully extracted!"
+ echo ".....Saved in /data/local/UnpackerPayload!"
+ echo
+ else
+ echo
+ echo ".....Error during extraction!"
+ echo
+ echo ".....Using the old extraction method"
+ echo ".....Extract from /$nd/$file..."
+ echo
+ 
+ busybox find /data/local/UnpackerPayload/* -maxdepth 1 ! -name "*.bin" -type f -exec busybox rm -f {} \; 2> /dev/null
+ payload-dumper -c 8 -o /data/local/UnpackerPayload "$file"
+ if [ $(echo $?) -eq 0 ]; then
+ clear
+ echo
+ echo ".....Images successfully extracted!"
+ echo ".....Saved in /data/local/UnpackerPayload!"
+ echo
+ else
+ echo
+ echo ".....Error during extraction!"
+ echo
+ fi
+ fi
+         main_menu
+         return
+         break 
+         elif [ "$REPLY" == "$i" ]; then
+         clear
+        main_menu
+        return
+        break
+        else
+        clear
+        echo
+            echo "      Enter the numbers corresponding to the menu."
+         payload
+         return
+         break
+         fi
+         break;;
+   *) clear
+        echo
+            echo "      Enter the numbers corresponding to the menu."
+         payload
+         return
+         break ;;
+  esac
+ done
+ else
+ echo
+ echo ....."In the folder \"/$nd\" there is no files \".bin\" to extract images."
+ echo
+ main_menu
+return
+fi
+echo
+else
+echo
+echo .....error: Error navigating to directory!
+echo
+echo Enter the directory correctly!
+echo
+payload
+return
+fi
+return
+}
+ payload
+    break ;;
+
+         7 ) clear
+             update_app()
+{
+              echo
+              echo "         Extract from UPDATE.APP     "
+              echo
+              echo "..Go to the folder where the file is located \"*.app\", For example: cd /sdcard"
+read b && $b
+if [ $(echo $?) -eq 0 ]; then
+clear
+#dir_dat=/data/local/binary
+nd=$(echo $b | busybox awk '{ print $2 }' | busybox sed 's!^/!!')
+#v=$(busybox find . -maxdepth 1 -iname '*.app' 2> /dev/null | busybox sed 's!./!!')
+
+ v=$(for a in $(busybox find . -maxdepth 1 -iname '*.app' -type f | busybox sed 's!./!!'); do
+    
+  if [ ! -z "$(busybox hexdump -C -n 100 "$a" | busybox grep -o "55 aa 5a a5")" ]; then
+       echo "$a"
+     fi
+     done)
+
+set -- $v
+
+if [ ! -z "$v" ]; then
+echo
+echo ".....Choose File:"
+echo
+select menu in $v "Exit to main menu"; do
+case $REPLY in
+                 [1-9]*) i="$#"
+                      let i=i+1
+                      file=$(echo "$@" | busybox cut -d' ' -f"$REPLY")
+         if [ ! -z "$file" -a "$REPLY" -lt "$i" ]; then
+ clear
+              echo
+              echo ".....Extract from /$nd/$file..."
+              echo
+ python31 /data/local/binary/bin_system/splitapp_v2.py -f "$file" -o /data/local/UnpackerUpdateApp
+
+   if [ $(echo $?) -eq 0 ]; then
+ cd /data/local/UnpackerUpdateApp
+ napp=$(busybox find -name "super_[0-9].img" -type f | sort -n)
+ if [ ! -z "$napp" ]; then
+ echo
+ echo ".....Merging the broken super.img together..."
+ simg2img ${napp} super.raw.img
+ if [ $(echo $?) -eq 0 ]; then
+echo
+ echo ".....Images successfully extracted!"
+ echo ".....Saved in /data/local/UnpackerUpdateApp!"
+ echo
+ else
+ echo
+ echo ".....Merging error!"
+ echo
+fi
+ else
+ echo
+ echo ".....Images successfully extracted!"
+ echo ".....Saved in /data/local/UnpackerUpdateApp!"
+ echo
+ fi
+ else
+ echo
+ echo ".....Error during extraction!"
+ echo
+ fi
+         main_menu
+         return
+         break 
+         elif [ "$REPLY" == "$i" ]; then
+         clear
+        main_menu
+        return
+        break
+        else
+        clear
+        echo
+            echo "      Enter the numbers corresponding to the menu."
+         update_app
+         return
+         break
+         fi
+         break;;
+   *) clear
+        echo
+            echo "      Enter the numbers corresponding to the menu."
+         update_app
+         return
+         break ;;
+  esac
+ done
+ else
+ echo
+ echo ....."In the folder \"/$nd\" there is no files \".app\" to extract images."
+ echo
+ main_menu
+return
+fi
+echo
+else
+echo
+echo .....error: Error navigating to directory!
+echo
+echo Enter the directory correctly!
+echo
+update_app
+return
+fi
+return
+}
+ update_app
+    break ;;
+         8 ) clear
+           . /data/local/binary/mmm
+             return
+             main_menu
+             return
+             break ;;
+         9 ) clear
+             my_ozip()
+{
+             cd
+             echo 
+             echo "...Go to the folder where the files are located: \".ozip\", For example: cd /sdcard"
+ read b && $b
+ if [ $(echo $?) -eq 0 ]; then
+ nd=$(echo $b | busybox awk '{ print $2 }')
+  clear
+  ss_ozip()
+{
+ 
+ v=$(for a in $(busybox find . -maxdepth 1 -name '*.ozip' -type f | busybox sed 's!./!!'); do
+       echo "$a"
+     done)
+
+ set -- $v
+ if [ ! -z "$v" ]; then
+ echo
+ echo ".....Choose File:"
+ echo
+ select menu in $v "Exit to main menu"; do
+case $REPLY in
+                 [1-9]*) i="$#"
+                      let i=i+1
+                      file=$(echo "$@" | busybox cut -d' ' -f"$REPLY")
+         if [ ! -z "$file" -a "$REPLY" -lt "$i" ]; then
+         clear
+        echo
+        python31 /data/local/binary/bin_system/ozipdecrypt.py "$file"
+   if [ $(echo $?) -eq 0 ]; then
+ echo
+ echo ".....Successfully completed!"
+ echo
+ else
+ echo
+ echo ".....error: An Error has occurred!"
+ echo
+ fi
+         main_menu
+         return
+         break
+         elif [ "$REPLY" -eq "$i" ]; then
+         clear
+        main_menu
+        return
+        break
+        else
+        clear
+        echo
+            echo "      Enter the numbers corresponding to the menu."
+         ss_ozip
+         return
+         break
+         fi
+         break;;
+      *) clear
+         echo
+            echo "      Enter the numbers corresponding to the menu."
+         ss_ozip
+         return
+         break;;
+  esac
+ done
+ else
+ echo
+ echo ".....In the folder \"$nd\" there is no files \".ozip\"."
+ echo
+ main_menu
+return
+ fi
+ return
+}
+ ss_ozip
+ else
+ echo
+ echo ".....error: Error navigating to directory!"
+ echo
+ echo "Enter the directory correctly!"
+ echo
+ my_ozip
+ return
+ fi
+ return
+}
+ my_ozip
+    break ;;
+         10 ) clear
+  
+             comp_md5()
+{
+              echo
+              echo "         Creation tar.md5     "
+              echo
+              echo "..Go to the folder where the file is located \"*.img\" или \"*.zip\", For example: cd /sdcard"
+read b && $b
+if [ $(echo $?) -eq 0 ]; then
+clear
+dir_dat=/data/local/binary
+nd=$(echo $b | busybox awk '{ print $2 }')
+v=$(busybox find . -maxdepth 1 -name '*.img' -o -name '*.lz4' 2> /dev/null | busybox sed 's!./!!')
+
+set -- $v
+
+if [ ! -z "$v" ]; then
+echo
+echo ".....Choose File:"
+echo
+select menu in $v "Exit to main menu"; do
+case $REPLY in
+                 [1-9]*) i="$#"
+                      let i=i+1
+                      file=$(echo "$@" | busybox cut -d' ' -f"$REPLY")
+         if [ ! -z "$file" -a "$REPLY" -lt "$i" ]; then
+ clear
+ file_tar="$file".tar
+ file_name="$(echo "$file" | busybox sed 's!\.[^.]*$!!')"
+ busybox tar -cf "$file".tar "$file" && busybox md5sum "$file_tar" >> "$file_tar" && busybox mv "$file_tar" "$file_tar".md5
+ if [ $(echo $?) -eq 0 ]; then
+ echo
+ echo ".....Successfully created File: "$file_tar".md5"
+ echo
+ else
+ echo
+ echo ".....Error while creating "$file_tar".md5!"
+ echo
+ fi
+         main_menu
+         return
+         break 
+         elif [ "$REPLY" == "$i" ]; then
+         clear
+        main_menu
+        return
+        break
+        else
+        clear
+        echo
+            echo "      Enter the numbers corresponding to the menu."
+         comp_md5
+         return
+         break
+         fi
+         break;;
+   *) clear
+        echo
+            echo "      Enter the numbers corresponding to the menu."
+         comp_md5
+         return
+         break ;;
+  esac
+ done
+ else
+ echo
+ echo ....."In the folder \"$nd\" there is no files \".img\" for conversion."
+ echo
+ main_menu
+return
+fi
+echo
+else
+echo
+echo .....error: Error navigating to directory!
+echo
+echo Enter the directory correctly!
+echo
+comp_md5
+return
+fi
+return
+}
+ comp_md5
+    break ;;
+         11 ) clear
+ 
+              rokchip_extract()
+{
+              echo
+              echo "         Unpacking firmware .img     "
+              
+  rok_dir="/data/local/UnpackerSystem"
+
+              echo
+              echo "..Go to the folder where the firmware file is located \".img\", For example: cd /sdcard"
+read b && $b
+if [ $(echo $?) -eq 0 ]; then
+clear
+nd=$(echo $b | busybox awk '{ print $2 }' | busybox sed 's!^/!!')
+echo
+echo ".....Search files..."
+
+ v=$(for a in $(busybox find . -maxdepth 1 -name '*.img' -type f | busybox sed 's!./!!'); do
+    
+  
+  if [ "$(busybox hexdump -C -n 300 "$a" | busybox grep -Eo "52 4b 46 57 66|52 4b 41 46|49 4d 41 47 45 57 54 59|56 19 b5 27")" ]; then
+     echo "$a"
+     fi
+     done)
+
+set -- $v
+
+if [ ! -z "$v" ]; then
+clear
+echo
+echo ".....Choose File:"
+echo
+select menu in $v "Exit to main menu"; do
+case $REPLY in
+                 [1-9]*) i="$#"
+                      let i=i+1
+                      file=$(echo "$@" | busybox cut -d' ' -f"$REPLY")
+         if [ ! -z "$file" -a "$REPLY" -lt "$i" ]; then
+ clear
+  name_rok="$(echo "$file" | busybox sed 's!.img$!!')"
+  
+  if [ -d "$rok_dir"/"$name_rok" -a "$rok_dir"/"$name_rok" != "$rok_dir"/ ]; then
+          echo
+          echo ".....Deleting an old folder: "$rok_dir"/"$name_rok""
+          busybox rm -rf "$rok_dir"/"$name_rok"
+          
+  fi
+
+
+ if [ "$(busybox hexdump -C -n 20 /"$nd"/"$file" | busybox grep -Eo "52 4b 46 57 66|52 4b 41 46")" ]; then
+
+              echo
+              echo ".....Detected Magic Rockchip..."
+              echo
+              echo ".....Extract from /$nd/$file..."
+              echo
+    if [ ! -z "$(busybox hexdump -C -n 20 /"$nd"/"$file" | busybox grep -o "52 4b 46 57 66")" ]; then
+ busybox mkdir "$rok_dir"/"$name_rok" 2> /dev/null
+echo "rkfwf" > "$rok_dir"/"$name_rok"/conf
+ 
+ busybox dd if="$file" of="$rok_dir"/"$name_rok"/tmpt bs=3000000 count=1 &>/dev/null
+ VER="$(busybox strings "$rok_dir"/"$name_rok"/tmpt | busybox awk -F"\:"  '/FIRMWARE_VER/ { print $2 }' | busybox awk -F"\." '{!$3} {$(NF+1)=0;} { print $1"."$2"."$3 }')"
+ echo "rom_version: "$VER""
+ busybox rm -f "$rok_dir"/"$name_rok"/tmpt
+ img_unpack "$file" "$rok_dir"/"$name_rok"
+ if busybox test -s "$rok_dir"/"$name_rok"/update.img; then
+ cd "$rok_dir"/"$name_rok"
+ afptool -unpack update.img .
+ if busybox test -s "$(busybox find "$rok_dir"/"$name_rok" -name "parameter*" | busybox head -1)"; then
+ echo
+ echo ".....Images successfully extracted!"
+ echo ".....Saved in "$rok_dir"/"$name_rok""
+ echo
+ else
+ echo
+ echo ".....Error! Error during extraction!"
+ echo
+ fi
+ #fi
+ else
+ echo
+ echo ".....Error! Error during extraction, no update.img!"
+ echo
+ fi
+
+ elif [ ! -z "$(busybox hexdump -C -n 20 /"$nd"/"$file" | busybox grep -o "52 4b 41 46")" ]; then
+ busybox mkdir "$rok_dir"/"$name_rok" 2> /dev/null
+echo "rkaf" > "$rok_dir"/"$name_rok"/conf
+ 
+
+ busybox cp -f /"$nd"/"$file" "$rok_dir"/"$name_rok"/update.img
+ cd "$rok_dir"/"$name_rok"
+ afptool -unpack update.img .
+ if busybox test -s "$(busybox find "$rok_dir"/"$name_rok" -name "parameter*" | busybox head -1)"; then
+ echo
+ echo ".....Images successfully extracted!"
+ echo ".....Saved in "$rok_dir"/"$name_rok""
+ echo
+ else
+ echo
+ echo ".....Error! Error during extraction!"
+ echo
+ fi
+ fi
+
+
+
+       busybox rm -f update.img
+   elif [ "$(busybox hexdump -C -n 3000 /"$nd"/"$file" | busybox grep -o "49 4d 41 47 45 57 54 59")" ]; then
+              clear
+              echo
+              echo ".....Detected Magic Alwinner..."
+              echo
+              echo ".....Extract from /$nd/$file..."
+              echo
+ busybox cp -f /"$nd"/"$file" "$rok_dir"/"$file"
+ cd "$rok_dir"
+ awimage "$file"
+ if [ $(echo $?) -eq 0 ]; then
+ busybox mv -f /"$rok_dir"/"$name_rok".img.dump /"$rok_dir"/"$name_rok"
+ echo
+ echo ".....Images successfully extracted!"
+ echo ".....Saved in "$rok_dir"/"$name_rok""
+ echo
+ busybox rm -f "$file"
+ else
+ echo
+ echo ".....Error! Error during extraction!"
+ echo
+ fi
+
+ elif [ "$(busybox hexdump -C -n 3000 /"$nd"/"$file" | busybox grep -o "56 19 b5 27")" ]; then
+              clear
+              echo
+              echo ".....Detected Magic Amlogic..."
+              echo
+              echo ".....Extract from /$nd/$file..."
+              echo
+ busybox mkdir "$rok_dir"/"$name_rok" 2> /dev/null
+ aml_image_v2_packer -d /"$nd"/"$file" "$rok_dir"/"$name_rok"
+ if [ $(echo $?) -eq 0 ]; then
+ echo
+ echo ".....Images successfully extracted!"
+ echo ".....Saved in "$rok_dir"/"$name_rok""
+ echo
+ else
+ echo
+ echo ".....Error! Error during extraction!"
+ echo
+ fi
+   fi
+
+         main_menu
+         return
+         break 
+         elif [ "$REPLY" == "$i" ]; then
+         clear
+        main_menu
+        return
+        break
+        else
+        clear
+        echo
+            echo "      Enter the numbers corresponding to the menu."
+         rokchip_extract
+         return
+         break
+         fi
+         break;;
+   *) clear
+        echo
+            echo "      Enter the numbers corresponding to the menu."
+         rokchip_extract
+         return
+         break ;;
+  esac
+ done
+ else
+ clear
+ echo
+ echo ....."In the folder \"/$nd\" there is no firmware file \".img\" to extract images."
+ echo
+ main_menu
+return
+fi
+echo
+else
+echo
+echo .....error: Error navigating to directory!
+echo
+echo Enter the directory correctly!
+echo
+rokchip_extract
+return
+fi
+return
+}
+
+
+rokchip_pack()
+{
+
+ rok_dir="/data/local/UnpackerSystem"
+ cd "$rok_dir"
+ b=$(for a in $(busybox find -maxdepth 1 ! -name "." -type d | busybox sed 's!./!!'); do
+ if busybox test -s "$a"/platform.conf; then
+ echo "$a"
+ fi
+ done)
+
+set -- $b
+
+if [ ! -z "$b" ]; then
+echo
+echo ".....Select the build folder:"
+echo
+select menu in $b "Exit to main menu" "Exit"; do
+case $REPLY in
+                 [1-9]*) i="$#"
+                      j="$#"
+                      let i=i+1
+                      let j=j+2
+                      file=$(echo "$@" | busybox cut -d' ' -f"$REPLY")
+       if [ ! -z "$file" -a "$REPLY" -lt "$i" ]; then
+         clear
+         name_rok=$file
+       if busybox test -s "$name_rok"/Image/parameter*; then   
+         busybox cp -f "$name_rok"/Image/parameter.txt "$name_rok"/parameter
+ load="$(busybox grep "bootloader" "$name_rok"/package-file | busybox awk '{ print $2}')"
+ for r in "29" "30" "31" "32" "33"; do
+rk_tmp="$(busybox cat "$name_rok"/parameter | busybox awk '/MACHINE:/ { print $2 }' | busybox grep -Eo '[0-9]{1,2}' | busybox head -1)"
+
+ if [ "$rk_tmp" == "$r" ]; then
+rk_v="-rk$rk_tmp "
+fi
+done
+ if [ ! -z "$load" ]; then
+ clear
+ echo
+ echo ".....Firmware assembly .img..."
+ echo
+ busybox sleep 2
+
+afptool -pack "$name_rok" update.new.img
+ if [ $(echo $?) -eq 0 ]; then
+ echo "img_maker "$rk_v""$name_rok"/"$load" update.new.img "$outdir"/"$name_rok"_new.img" > pack.sh
+ chmod 755 ./pack.sh && ./pack.sh
+ if [ $(echo $?) -eq 0 ]; then
+ echo
+ echo ".....Successfully created "$outdir"/"$name_rok"_new.img"
+ echo
+ else
+ echo
+ echo ".....Error while building the shared image!"
+ echo
+ fi
+ else
+ echo
+ echo ".....Error while building the primary image!"
+ echo
+ fi
+ else
+ echo ".....Configuration error!"
+ fi
+      busybox rm -f update.new.img pack.sh
+      
+      elif busybox test -s "$name_rok"/image.cfg; then
+      echo
+      echo ".....Firmware assembly .img..."
+      echo
+      busybox sleep 2
+      aml_image_v2_packer -r "$name_rok"/image.cfg "$rok_dir"/"$name_rok" "$outdir"/"$name_rok".new.img
+       if [ $(echo $?) -eq 0 ]; then
+ echo
+ echo ".....Successfully created "$outdir"/"$name_rok"_new.img"
+ echo
+ else
+ echo
+ echo ".....Error while building the shared image!"
+ echo
+ fi
+      fi
+         main_menu
+         return
+         break
+       elif [ "$REPLY" -eq "$i" ]; then
+         clear
+        main_menu
+        return
+        break
+       elif [ "$REPLY" -eq "$j" ]; then
+         clear
+        return
+        break
+       else
+        clear
+        echo
+            echo "      Enter the numbers corresponding to the menu."
+         rokchip_pack
+         return
+         break
+         fi
+         break;;
+      *) clear
+         echo
+            echo "      Enter the numbers corresponding to the menu."
+         rokchip_pack
+         return
+         break;;
+  esac
+  done
+ else
+ echo
+ echo ....."In \"$PWD\" there are no build folders."
+ echo
+ main_menu
+ return
+ fi
+return
+}
+
+
+  menu_rok()
+  {
+ if [ ! -z "$(getprop ro.product.cpu.abilist64)" ]; then
+              echo
+              echo "         Unpacking firmware .img     "
+              echo
+ select img in "Unpack the firmware .img" "Exit to main menu" "Exit"; do
+case $REPLY in 
+                1 ) clear
+                    rokchip_extract
+                    break ;;
+                 2 ) clear
+                    main_menu
+                    break ;;
+                 3 ) clear
+                     break ;;
+                * ) clear
+            echo
+            echo "      Enter the numbers corresponding to the menu."
+            echo
+            menu_rok
+              break ;;
+esac
+done
+ else
+ echo
+ echo ".....The operation of the Menu item: \"Repacking .img firmware\" is not supported on 32-bit firmware!"
+  echo
+    main_menu
+ fi
+return
+ }
+ menu_rok
+  break
+   main_menu
+    break ;;
+    
+         12 ) clear
+
+       aa()
+{
+ #m_name="$(busybox basename "$file" | busybox sed 's!.ofp$!!')"
+cd /data/local/UnpackerSystem
+if busybox test -s "$m_name"/super_map.csv; then
+v="$(busybox cat "$m_name"/super_map.csv | busybox awk -F"," '! /nv_text/ { print $1"-"$2 }')"
+ elif busybox test -s "$m_name"/ProFile.xml; then
+ v="$(busybox cat "$m_name"/ProFile.xml | busybox awk -F'"' '/<nv id/ { print $2"-"$4 }')"
+ fi
+set -- $v
+echo
+echo ".....Select the region for gluing super.raw.img:"
+echo
+select menu in $v "Exit to main menu"; do
+case $REPLY in
+                  [1-9]*) i="$#"
+                      let i=i+1
+                      file=$(echo "$@" | busybox cut -d' ' -f"$REPLY")
+         if [ ! -z "$file" -a "$REPLY" -lt "$i" ]; then
+ if busybox test -s "$m_name"/super_map.csv; then
+         ddd="$(echo "$file" | busybox sed 's!-!,!')"
+         f_ext="$(busybox cat "$m_name"/super_map.csv | busybox grep "$ddd" | busybox awk -v a="$m_name" -F"," '! /nv_text/ { print a"/"$3" "a"/"$4" "a"/"$5 }')"
+         
+   elif busybox test -s "$m_name"/ProFile.xml; then
+ f_ext="$(busybox cat "$m_name"/ProFile.xml | busybox awk -F'"' '/<nv id/ { print $2"-"$4" "$6" "$8" "$10 }' | busybox grep "$file" | busybox awk -v a="$m_name" '{ print a"/"$2" "a"/"$3" "a"/"$4 }')"
+ fi
+         f_out="super_"${file}".raw.img"
+ echo "simg2img "$f_ext" "$m_name"/"$f_out"" > pack.sh
+
+ clear
+ echo
+ echo ".....Merging $f_out, We wait..."
+ chmod 755 ./pack.sh && ./pack.sh
+ if [ $(echo $?) -eq 0 ]; then
+   echo
+   echo ".....Successfully completed!"
+   echo
+  return
+  else
+   echo
+   echo ".....Error when merging super.raw.img!"
+   echo
+   return
+  fi
+         return
+         break
+         elif [ "$REPLY" -eq "$i" ]; then
+         clear
+        return
+        break
+        else
+        clear
+        echo
+            echo "      Enter the numbers corresponding to the menu."
+         aa
+         return
+         break
+         fi
+         break;;
+      *) clear
+         echo
+            echo "      Enter the numbers corresponding to the menu."
+        aa
+         return
+         break;;
+  esac
+ done
+return
+}
+
+              ofp()
+{
+
+ m_name="$(busybox basename "$file" | busybox sed -e 's!.ofp$!!; s!.ops$!!')"
+
+ cd /data/local/UnpackerSystem
+ mkdir "$m_name" 2> /dev/null
+ >super_simg
+ echo 
+ echo ".....Extracting images from "$file""
+ echo ".....We wait..."
+ echo
+ #python39 /data/local/binary/bin_oppo_decrypt/ofp_mtk_decrypt.py "$file" "$m_name" 1> log.txt
+ #python39 /data/local/binary/bin_oppo_decrypt/ofp_qc_decrypt.py "$file" /"$ofp_dir"/"$m_name" 1>> log.txt
+ #busybox cp -f log.txt "$m_name"/log.txt
+ 
+ 
+ python31 /data/local/binary/OppoDecrypt-main -c mtk "$file" /"$ofp_dir"/"$m_name" 1> log.txt
+ if [ -z "$(busybox cat log.txt | busybox tail -3 | busybox grep "ERROR")" -a -s log.txt ]; then
+   echo
+   echo ".....Images were successfully extracted to /data/local/UnpackerSystem/$m_name"
+   echo
+   ofp_exit="10"
+else
+python31 /data/local//binary/OppoDecrypt-main -c qualcomm "$file" /"$ofp_dir"/"$m_name" 1> log.txt
+if [ -z "$(busybox cat log.txt | busybox tail -3 | busybox grep "ERROR")" -a -s log.txt ]; then
+   echo
+   echo ".....Images were successfully extracted to /data/local/UnpackerSystem/$m_name"
+   echo
+   ofp_exit="10"
+else
+echo
+ echo ".....Error during extraction!"
+echo
+fi
+fi
+
+
+
+ busybox cp -f log.txt "$m_name"/log.txt
+
+  #if [ ! -z "$(busybox cat log.txt | busybox grep -E "Files successfully|Done. Extracted")" ]; then
+   #echo
+   #echo ".....Images were successfully extracted to /data/local/UnpackerSystem/$m_name"
+   #echo
+   #ofp_exit="10"
+  #else
+   #echo
+   #echo ".....Error during extraction!"
+   #echo
+  #fi
+
+ check_sup="$(busybox cat log.txt | busybox awk '/super.[0-9]/ { print $5 }' | busybox sed 's!"!!g')"
+ if [ "$ofp_exit" == "10" -a ! -z "$check_sup" ]; then
+ #>super_simg
+ echo
+ echo ".....Found super.img, broken into parts!"
+ if [ "$check_pack" == "0" ]; then
+ #i=0
+ echo "$check_sup" | while read a; do
+ #let i=i+1
+ #f="$m_name/super."$i".img"
+ f="$m_name/${a}"
+ #echo -ne "$f " >> super_simg
+ if [ ! -z "$(echo "$a" | busybox grep ".img")" ]; then
+ echo -ne "$f " >> super_simg
+ #busybox mv "$m_name"/"$a" "$f"
+ else
+ #busybox mv "$m_name"/"$a".img "$f"
+ echo -ne "${f}.img " >> super_simg
+ fi
+ done
+
+ echo 
+ echo ".....Let's merge super.raw.img! We wait..."
+ 
+ echo "simg2img "$(busybox cat super_simg)"$m_name/super.raw.img" > super.sh
+ if [ ! -z "$(busybox cat super.sh | busybox awk '/super/ { print $2 }')" ]; then
+ chmod 755 super.sh && ./super.sh
+
+ if [ $(echo $?) -eq 0 ]; then
+   echo
+   echo ".....Successfully completed!"
+   echo
+  else
+   echo
+   echo ".....Error when merging super.raw.img!"
+   echo
+  fi
+ fi
+ elif [ "$check_pack" == "1" -a -s  "$m_name"/super_map.csv -o "$check_pack" == "1" -a -s "$m_name"/ProFile.xml ]; then
+ aa
+ else
+ echo
+ echo ".....No file for merging by region!"
+ echo
+  fi
+  fi
+ busybox rm -f super_simg super.sh log.txt pack.sh
+ main_menu
+  return
+}
+
+ofp_extract()
+{
+              echo
+              echo "         Unpacking firmware .ofp|.ops     "
+              
+  ofp_dir="/data/local/UnpackerSystem"
+
+              echo
+              echo "..Go to the folder where the firmware file is located \".ofp|.ops\", For example: cd /sdcard"
+read b && $b
+if [ $(echo $?) -eq 0 ]; then
+clear
+nd=$(echo $b | busybox awk '{ print $2 }' | busybox sed 's!^/!!')
+echo
+echo ".....Search files..."
+
+ v=$(for a in $(busybox find . -maxdepth 1 -name '*.ofp' -o -name '*.ops' -type f | busybox sed 's!./!!'); do
+     echo "$a"
+     done)
+
+set -- $v
+
+if [ ! -z "$v" ]; then
+clear
+echo
+echo ".....Choose File:"
+echo
+select menu in $v "Exit to main menu"; do
+case $REPLY in
+                 [1-9]*) i="$#"
+                      let i=i+1
+                      file=$(echo "$@" | busybox cut -d' ' -f"$REPLY")
+         if [ ! -z "$file" -a "$REPLY" -lt "$i" ]; then
+ clear
+  name_ofp="$(echo "$file" | busybox sed 's!.ofp$!!')"
+file=/"$nd"/"$file"
+  
+  if [ -d "$ofp_dir"/"$name_ofp" -a "$ofp_dir"/"$name_ofp" != "$ofp_dir"/ ]; then
+          echo
+          echo ".....Deleting an old folder: "$ofp_dir"/"$name_ofp""
+          busybox rm -rf "$ofp_dir"/"$name_ofp"
+          fi
+         ofp
+         return
+         main_menu
+         return
+         break 
+         elif [ "$REPLY" == "$i" ]; then
+         clear
+        main_menu
+        return
+        break
+        else
+        clear
+        echo
+            echo "      Enter the numbers corresponding to the menu."
+         ofp_extract
+         return
+         break
+         fi
+         break;;
+   *) clear
+        echo
+            echo "      Enter the numbers corresponding to the menu."
+         ofp_extract
+         return
+         break ;;
+  esac
+ done
+ else
+ clear
+ echo
+ echo ....."In the folder \"/$nd\" there is no firmware file \".ofp|.ops\" to extract images."
+ echo
+ main_menu
+return
+fi
+echo
+else
+echo
+echo .....error: Error navigating to directory!
+echo
+echo Enter the directory correctly!
+echo
+ofp_extract
+return
+fi
+return
+}
+
+ menu_ofp()
+  {
+              echo
+              echo "         Unpacking firmware .ofp|.ops     "
+              echo
+ select img in "Unpack the firmware .ofp|.ops" "Exit to main menu" "Exit"; do
+case $REPLY in 
+                #1 ) #clear
+                    #check_pack=0
+                    #ofp_extract
+                    #break ;;
+                1 ) clear
+                    check_pack=1
+                    ofp_extract
+                    #aa
+                    break ;;
+                2 ) clear
+                    main_menu
+                    return
+                    break ;;
+                3 ) clear
+                     break ;;
+                * ) clear
+            echo
+            echo "      Enter the numbers corresponding to the menu."
+            echo
+            menu_ofp
+              break ;;
+esac
+ done
+   return
+ }
+ menu_ofp
+  break
+   main_menu
+    break ;;
+         13 ) clear
+             main_menu
+             break ;;
+         14 ) clear
+             break ;;
+         *) echo "Enter the number corresponding to the Menu items: Other Tools" ;;
+    esac
+done
+return
+}
+my2
+ break ;;
+         12) clear
+         del_papka()
+{
+         rm -rf $del; mkdir $del; chmod 755 $del;
+
+echo 
+echo " .....The folder has been cleaned: $del"
+echo
+return
+}
+            my9(){
+            echo
+            echo "      Menu: Clean up work folders"
+            echo
+            echo -en "\E[31;47;1m"
+            echo " Before cleaning, move the necessary files to another folder! "
+            echo -en "\E[37;0m"
+            echo -en "\E[37;1m"
+            echo
+select img in "Clean folder: /data/local/UnpackerSystem" "Clean folder: /data/local/UnpackerQfil" "Clean folder: /data/local/UnpackerContexts" "Clean folder: /data/local/UnpackerPayload" "Clean folder: /data/ local/UnpackerSuper" "Empty folder: /data/local/UnpackerUpdateApp" "Empty folder: /data/local/UnpackerPreloader" "Empty all folders at once" "Exit to main menu" "Exit"; do
+case $REPLY in 
+         1 ) clear
+             del=/data/local/UnpackerSystem
+             del_papka
+             main_menu
+             break ;;
+         2 ) clear
+             del=/data/local/UnpackerQfil
+             del_papka
+             main_menu
+             break ;;
+         3 ) clear
+             del=/data/local/UnpackerContexts
+             del_papka
+             main_menu
+             break ;;
+         4 ) clear
+             del=/data/local/UnpackerPayload
+             del_papka
+             main_menu
+             break ;;
+         5 ) clear
+             del=/data/local/UnpackerSuper
+             del_papka
+             main_menu
+             break ;;
+         6 ) clear
+             del=/data/local/UnpackerUpdateApp
+             del_papka
+             main_menu
+             break ;;
+         7 ) clear
+             del=/data/local/UnpackerPreloader
+             del_papka
+             main_menu
+             break ;;
+         8 ) clear
+            del_dir=/data/local/Unpacker
+ for del_all in "$del_dir"Contexts "$del_dir"System "$del_dir"Qfil "$del_dir"Payload "$del_dir"Super "$del_dir"UpdateApp "$del_dir"Preloader; do
+ rm -rf $del_all; mkdir $del_all; chmod 755 $del_all
+ done
+ echo 
+ echo " .....All working folders have been cleared."
+ echo
+             main_menu
+             break ;;
+         9 ) clear
+             main_menu
+             break ;;
+         10 ) clear
+             break ;;
+         *) echo "Enter the number corresponding to the Menu items: Clean up work folders" ;;
+    esac
+done
+return
+}
+my9
+break ;;
+         13) clear
+
+reb()
+{
+echo
+ echo -ne "        Reboot after 5 sec      \r"
+sleep 1
+echo -ne "         ..... 5 .....                \r"
+sleep 1
+echo -ne "          .... 4 ....                 \r"
+sleep 1
+echo -ne "           ... 3 ...                  \r"
+sleep 1
+echo -ne "            .. 2 ..                   \r"
+sleep 1
+echo -ne "             . 1 .                    \r"
+sleep 1
+echo -ne "                                      \r"
+}
+
+             del_unpack()
+{
+echo
+echo -en "\E[31;47;1m"
+echo "     Remove \"Unpacker Kitchen for Android\" from your phone?     "
+echo -en "\E[37;0m"
+echo -en "\E[37;1m"
+echo
+select img in "Yes" "No, go to main menu"; do
+case $REPLY in 
+         1 ) clear
+              if busybox test -d /data/local/AIK-mobile; then        
+  
+     echo
+     echo ".....Removal AIK-mobile..."
+ /data/local/AIK-mobile/cleanup.sh
+ /data/local/AIK-mobile/bin/aik --uninstall 2> /dev/null
+ busybox mount -o rw,remount / 2> /dev/null
+ busybox mount -o rw,remount /system 2> /dev/null
+  busybox find $(echo $PATH | busybox sed 's!:! !g') -name 'aik' -type f -o -iname 'aik-mobile' -type d | busybox xargs busybox rm -rf 2> /dev/null
+ busybox rm -rf /data/local/AIK-mobile /data/adb/modules/aik-mobile 2> /dev/null
+#if [ $(echo $?) -eq 0 ]; then
+echo
+echo ".....AIK-mobile has been deleted!"
+echo
+#fi
+fi
+ delit_uka="/data/adb/modules/UKA/uninstall.sh"
+ if busybox test -s "$delit_uka"; then
+ busybox chmod 755 "$delit_uka" && "$delit_uka"
+ #if [ $(echo $?) -eq 0 ]; then
+
+ reb
+ reboot
+ 
+ #else
+ elif busybox test -f /data/local/binary/UninstallerUnpack.zip -a ! -f "$delit_uka"; then
+ busybox mkdir /cache/recovery 2> /dev/null
+ busybox chmod 755 /cache/recovery 2> /dev/null
+ busybox cp -f /data/local/binary/UninstallerUnpack.zip /cache/recovery/UninstallerUnpack.zip
+ echo "install /cache/recovery/UninstallerUnpack.zip" > /cache/recovery/openrecoveryscript
+ busybox chmod 755 /cache/recovery/openrecoveryscript 2> /dev/null
+
+ reb
+ reboot recovery
+fi
+#fi
+#fi
+               main_menu
+               break ;;
+         2 ) clear
+               main_menu
+               break ;;
+         * ) clear
+            echo
+            echo "      Enter the numbers corresponding to this menu."
+              del_unpack
+              break ;;
+    esac
+done
+return
+}
+del_unpack
+break ;;
+
+         14) clear
+             break ;;
+         *) echo "Enter the number corresponding to the menu items." ;;
+    esac
+done
+return
+}
+main_menu
