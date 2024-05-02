@@ -13,7 +13,7 @@ jobs:
       - uses: actions/download-artifact@v3
       - name: Rename Tool
         run: |
-          mv UKA/UKA.zip UKA-PRO-5.${{ github.run_number }}-magisk.zip
+          mv UKA/UKA.zip UKA-PRO-5.${{ github.run_number }}-twrp.zip
       - name: Upload release
         uses: ncipollo/release-action@v1
         with:
