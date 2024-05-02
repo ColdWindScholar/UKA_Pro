@@ -736,4 +736,3 @@ echo ".....Образа "$file", нет в папке: /data/local/UnpackerSyste
 echo
  fi
  fi
- 
