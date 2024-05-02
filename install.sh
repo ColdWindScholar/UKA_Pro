@@ -198,7 +198,7 @@ unzip -o "$ZIPFILE" "uninstall.sh" -d $MODPATH
 unzip -p "$ZIPFILE" "binary.tar.xz" |tar xJ -C /data
 #unzip -p "$ZIPFILE" "python39.tar.xz" |tar xJ -C /data/local >/dev/null
 mkdir /data/local/python
-unzip -p "$ZIPFILE" "python.tar.gz" |tar xvf -C /data/local/python
+unzip -p "$ZIPFILE" "python.tar.xz" |tar xJ -C /data/local/python
 unzip -p "$ZIPFILE" "aik.tar.xz" |tar xJ -C /data/local
 ui_print "- Unmounting /system, /data, and rootfs"
 mount -o ro,remount "/"
