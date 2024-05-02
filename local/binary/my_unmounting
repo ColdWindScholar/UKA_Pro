@@ -1,6 +1,5 @@
 #!/system/bin/sh
 
-#loop=$(busybox mount | grep "$file" | cut -d" " -f1)
 
 loop=$(busybox mount | cut -d" " -f1,3 | grep "$file$" | cut -d" " -f1)
 loop_d=$(busybox mount | cut -d" " -f3 | grep "$file$")
@@ -19,7 +18,7 @@ if [ ! -z "$loop_d" ]; then
  fuser -skm "$loop_d"
  busybox umount "$loop_d"
 if [ "$?" -eq 0 ]; then
-losetup -d "$loop" 2> /dev/null
+losetup -d "$loop"
 busybox rm -rf "$loop_d"
 
 echo ".....Успешно размонтировано: $loop_d"
