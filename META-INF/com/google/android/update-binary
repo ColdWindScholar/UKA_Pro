@@ -1,173 +1,120 @@
 #!/sbin/sh
 
-#################
-# Initialization
-#################
-
-umask 022
-
-# Global vars
-TMPDIR=/dev/tmp
-PERSISTDIR=/sbin/.magisk/mirror/persist
-
-rm -rf $TMPDIR 2>/dev/null
-mkdir -p $TMPDIR
-
-# echo before loading util_functions
-ui_print() { echo "$1"; }
-
-require_new_magisk() {
-  ui_print "*******************************"
-  ui_print " Please install Magisk v19.0+! "
-  ui_print "*******************************"
-  exit 1
-}
-
-is_legacy_script() {
-  unzip -l "$ZIPFILE" install.sh | grep -q install.sh
-  return $?
-}
-
-print_modname() {
-  local len
-  len=`echo -n $MODNAME | wc -c`
-  len=$((len + 2))
-  local pounds=`printf "%${len}s" | tr ' ' '*'`
-  ui_print "$pounds"
-  ui_print " $MODNAME "
-  ui_print "$pounds"
-  ui_print "*******************"
-  ui_print " Powered by Magisk "
-  ui_print "*******************"
-}
-
-##############
-# Environment
-##############
-
 OUTFD=$2
-ZIPFILE=$3
+ZIP=$3
+oPATH=$PATH
+mkdir -p /tmp/bb/list
+unzip -o "$ZIP" 'busybox' -d /tmp/bb
+chmod 755 /tmp/bb/busybox
+/tmp/bb/busybox --install -s /tmp/bb
+export PATH=/tmp/bb:$PATH
+chmod 755 /tmp/bb/*
 
-mount /data 2>/dev/null
+ui_print() {
+echo -n -e "ui_print $1\n" > /proc/self/fd/$OUTFD
+echo -n -e "ui_print\n" > /proc/self/fd/$OUTFD
+}
 
-# Load utility functions
-[ -f /data/adb/magisk/util_functions.sh ] || require_new_magisk
-. /data/adb/magisk/util_functions.sh
-[ $MAGISK_VER_CODE -gt 18100 ] || require_new_magisk
+ui_print " "
+ui_print "*********************"
+ui_print "    Установка UKA"
+ui_print "*********************"
+ui_print " "
 
-# Preperation for flashable zips
-setup_flashable
+ui_print "- Mounting /system, /data, and rootfs"
 
-# Mount partitions
-mount_partitions
-
-# Detect version and architecture
-api_level_arch_detect
-
-# Setup busybox and binaries
-$BOOTMODE && boot_actions || recovery_actions
-
-##############
-# Preparation
-##############
-
-# Extract prop file
-unzip -o "$ZIPFILE" module.prop -d $TMPDIR >&2
-[ ! -f $TMPDIR/module.prop ] && abort "! Unable to extract zip file!"
-
-$BOOTMODE && MODDIRNAME=modules_update || MODDIRNAME=modules
-MODULEROOT=$NVBASE/$MODDIRNAME
-MODID=`grep_prop id $TMPDIR/module.prop`
-MODPATH=$MODULEROOT/$MODID
-MODNAME=`grep_prop name $TMPDIR/module.prop`
-
-# Create mod paths
-rm -rf $MODPATH 2>/dev/null
-mkdir -p $MODPATH
-
-##########
-# Install
-##########
-
-if is_legacy_script; then
-  unzip -oj "$ZIPFILE" module.prop install.sh uninstall.sh 'common/*' -d $TMPDIR >&2
-
-  # Load install script
-  . $TMPDIR/install.sh
-
-  # Callbacks
-  print_modname
-  on_install
-
-  # Custom uninstaller
-  [ -f $TMPDIR/uninstall.sh ] && cp -af $TMPDIR/uninstall.sh $MODPATH/uninstall.sh
-
-  # Skip mount
-  $SKIPMOUNT && touch $MODPATH/skip_mount
-
-  # prop file
-  $PROPFILE && cp -af $TMPDIR/system.prop $MODPATH/system.prop
-
-  # Module info
-  cp -af $TMPDIR/module.prop $MODPATH/module.prop
-
-  # post-fs-data scripts
-  $POSTFSDATA && cp -af $TMPDIR/post-fs-data.sh $MODPATH/post-fs-data.sh
-
-  # service scripts
-  $LATESTARTSERVICE && cp -af $TMPDIR/service.sh $MODPATH/service.sh
-
-  ui_print "- Setting permissions"
-  set_permissions
+check_mount_system="$(cat /proc/mounts | busybox awk '{ print $2 }' | busybox grep "/system" | head -1)"
+if [ ! -z "$check_mount_system" ]; then
+sys_mount="$check_mount_system"
+if [ ! -z "$sys_mount" ]; then
+mount -o rw,remount "$sys_mount"
 else
-  print_modname
-
-  unzip -o "$ZIPFILE" customize.sh -d $MODPATH >&2
-
-  if ! grep -q '^SKIPUNZIP=1$' $MODPATH/customize.sh 2>/dev/null; then
-    ui_print "- Extracting module files"
-    unzip -o "$ZIPFILE" -x 'META-INF/*' -d $MODPATH >&2
-
-    # Default permissions
-    set_perm_recursive $MODPATH 0 0 0755 0644
-  fi
-
-  # Load customization script
-  [ -f $MODPATH/customize.sh ] && . $MODPATH/customize.sh
+ui_print " "
+ui_print "Aborting! Failed to find system mountpoint!"
+ui_print " "
+fi
+else
+sys_mount="$(busybox awk '{ print $2 }' /etc/fstab | busybox grep "/system" | grep -v "/*image" | head -1)"
+if [ ! -z "$sys_mount" ]; then
+mount "$sys_mount"
+mount -o rw,remount "$sys_mount"
+else
+ui_print " "
+ui_print "Aborting! Failed to find system mountpoint!"
+ui_print " "
+fi
 fi
 
-# Handle replace folders
-for TARGET in $REPLACE; do
-  ui_print "- Replace target: $TARGET"
-  mktouch $MODPATH$TARGET/.replace
-done
-
-if $BOOTMODE; then
-  # Update info for Magisk Manager
-  mktouch $NVBASE/modules/$MODID/update
-  cp -af $MODPATH/module.prop $NVBASE/modules/$MODID/module.prop
+check_mount_data="$(cat /proc/mounts | busybox awk '{ print $2 }' | busybox grep "/data" | head -1)"
+if [ ! -z "$check_mount_data" ]; then
+mount_data="$check_mount_data"
+if [ ! -z "$mount_data" ]; then
+mount -o rw,remount "$mount_data"
+else
+ui_print " "
+ui_print "Aborting! Failed to find data mountpoint!"
+ui_print " "
+fi
+else
+mount_data="$(busybox awk '{ print $2 }' /etc/fstab | busybox grep "/data" | head -1)"
+if [ ! -z "$mount_data" ]; then
+mount "$mount_data"
+mount -o rw,remount "$mount_data"
+else
+ui_print " "
+ui_print "Aborting! Failed to find data mountpoint!"
+ui_print " "
+fi
 fi
 
-# Copy over custom sepolicy rules
-if [ -f $MODPATH/sepolicy.rule -a -e $PERSISTDIR ]; then
-  ui_print "- Installing custom sepolicy patch"
-  PERSISTMOD=$PERSISTDIR/magisk/$MODID
-  mkdir -p $PERSISTMOD
-  cp -af $MODPATH/sepolicy.rule $PERSISTMOD/sepolicy.rule
+if [ -f "$sys_mount"/build.prop ]; then
+sys_tem="$sys_mount"
+else
+	if [ -f "$sys_mount"/system/build.prop ]; then
+	sys_tem="$sys_mount/system"
+	else
+	ui_print " "
+	ui_print "Aborting! Failed to find system root!"
+	ui_print " "
+	fi
 fi
 
-# Remove stuffs that don't belong to modules
-rm -rf \
-$MODPATH/system/placeholder $MODPATH/customize.sh \
-$MODPATH/README.md $MODPATH/.git* 2>/dev/null
 
-##############
-# Finalizing
-##############
+ABI=$(cat /default.prop | grep ro.product.cpu.abi= | dd bs=1 skip=19 count=3)
+ABI2=$(cat /default.prop | grep ro.product.cpu.abi2= | dd bs=1 skip=20 count=3)
 
-cd /
-$BOOTMODE || recovery_cleanup
-rm -rf $TMPDIR
+ARCH=arm
+if [ "$ABI" = "x86" ]; then exit 0; fi;
+if [ "$ABI2" = "x86" ]; then exit 0; fi;
 
-ui_print "- Done"
+ui_print "- Extracting files"
+rm -rf /tmp/bb/xz
+busybox unzip -o "$ZIP" "bin.tar.xz" "aik.tar.xz" "binary.tar.xz" "python31.tar.xz" "gnutar" "xz" -d /tmp/bb/list
+ui_print "- Pre-setting perms"
+export PATH=/tmp/bb:/tmp/bb/list:$PATH
+chmod -R 0755 /tmp/bb/list
+
+ui_print "- Moving files to /system, /data"
+
+#/tmp/bb/list/gnutar -xJf /tmp/bb/list/python39.tar.xz -C /data/local
+mkdir /data/local/python
+/tmp/bb/list/gnutar -xJf /tmp/bb/list/python.tar.xz -C /data/local/python
+/tmp/bb/list/gnutar -xJf /tmp/bb/list/aik.tar.xz -C /data/local
+/tmp/bb/list/gnutar -xJf /tmp/bb/list/binary.tar.xz -C /data
+#/tmp/bb/list/gnutar -xJf /tmp/bb/list/lib.tar.xz -C $sys_tem
+/tmp/bb/list/gnutar -xJf /tmp/bb/list/bin.tar.xz -C $sys_tem
+
+ui_print "- Unmounting /system and /data"
+cd
+umount system
+umount system_root
+umount data
+if [ -e $oPATH ]; then
+PATH=$oPATH
+fi
+
+ui_print "- Cleaning up!"
+rm -rf /tmp/bb
+
+ui_print "- Done !"
 exit 0
