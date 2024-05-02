@@ -8,7 +8,7 @@
  #. remove_key "$outdir"/"$pack_d".new.img "$dir_avb"/*_pubkey.pem
  #busybox cp -f "$copy_sign_file" "$dir_avb"/"$pack_d"_pubkey_new.pem
  #fi
- tune2fs -U "$(busybox cat "$dir_avb"/"$pack_d"_uuid.txt | busybox head -1)" "$outdir"/"$pack_d".new.img &>/dev/null
+ tune2fs -U "$(busybox cat "$dir_avb"/"$pack_d"_uuid.txt | busybox head -1)" "$outdir"/"$pack_d".new.img
  echo
  echo -e "\033[33;1m.....Успешно создан "$pack_d".new.img!\033[0m"
  echo
