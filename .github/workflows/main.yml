@@ -13,7 +13,7 @@ jobs:
       - uses: actions/download-artifact@v3
       - name: Rename Tool
         run: |
-          mv UKA/UKA.zip UKA
+          mv UKA/UKA.zip UKA.zip
       - name: Upload release
         uses: ncipollo/release-action@v1
         with:
