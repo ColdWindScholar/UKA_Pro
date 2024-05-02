@@ -1808,7 +1808,7 @@ return
             my_mount()
 {
  
- #check_mount
+
  #if [ $(echo $?) -eq 0 ] ; then
  #busybox rm -f /data/local/binary/papka.txt
  #fi
@@ -6696,7 +6696,7 @@ sleep 1
 echo -ne "                                      \r"
 }
 
-             del_unpack()
+del_unpack()
 {
 echo
 echo -en "\E[31;47;1m"
@@ -6707,16 +6707,16 @@ echo
 select img in "Да" "Нет,выйти в главное меню"; do
 case $REPLY in 
          1 ) clear
-              if busybox test -d /data/local/AIK-mobile; then        
+             if busybox test -d /data/local/AIK-mobile; then
   
      echo
-     echo ".....Удаление AIK-mobile..."
- /data/local/AIK-mobile/cleanup.sh
- /data/local/AIK-mobile/bin/aik --uninstall 2> /dev/null
+
+
+
  busybox mount -o rw,remount / 2> /dev/null
  busybox mount -o rw,remount /system 2> /dev/null
-  busybox find $(echo $PATH | busybox sed 's!:! !g') -name 'aik' -type f -o -iname 'aik-mobile' -type d | busybox xargs busybox rm -rf 2> /dev/null
- busybox rm -rf /data/local/AIK-mobile /data/adb/modules/aik-mobile 2> /dev/null
+ busybox find $(echo $PATH | busybox sed 's!:! !g') -name 'aik' -type f -o -iname 'aik-mobile' -type d | busybox xargs busybox rm -rf 2> /dev/null
+
 #if [ $(echo $?) -eq 0 ]; then
 echo
 echo ".....AIK-mobile удалён!"
