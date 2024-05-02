@@ -3,8 +3,6 @@
 clear
 dir="/data/local/binary"
 export PATH=/data/local/binary:$PATH
-#export LD_LIBRARY_PATH="/data/local/binary/lib"
-#PS3=" =>: "
 /data/local/binary/lib/busybox find /data/local/UnpackerSystem/gen_keys -maxdepth 1 -empty -exec busybox rm -rf {} \;
 /data/local/binary/lib/busybox find /data/local/UnpackerSystem/extract_keys -maxdepth 1 -empty -exec busybox rm -rf {} \;
 
@@ -5146,14 +5144,11 @@ main_menu() {
 											echo
 											echo ".....Извлечение из /$nd/$file_or..."
 											echo
-											#lz4 -df --no-sparse "$file"
-
 											if [ -z "$(getprop ro.product.cpu.abilist64)" ]; then
 												zstd32 -df "$file"
 											else
 												zstd64 -df "$file"
 											fi
-
 											if [ "$?" -eq "0" ]; then
 												echo
 												echo ".....Успешно завершено!"
@@ -5168,9 +5163,7 @@ main_menu() {
 											fi
 											return
 										}
-
 										set -- $v
-
 										if [ ! -z "$v" ]; then
 											echo
 											echo ".....Выберите файл для конвертации:"
@@ -5331,7 +5324,6 @@ main_menu() {
 										set -- $v
 
 										if [ ! -z "$v" ]; then
-											#if [ "$#" -le "10" ]; then
 											echo
 											echo ".....Выберите файл для конвертации:"
 											echo
@@ -5455,11 +5447,9 @@ main_menu() {
 												if [ ! -z "${name1}" ]; then
 													mkdir ./output
 
-													#name_out=$(echo $name1 | busybox sed 's!./!!' | busybox awk -F"img" '{ print $1 }')
 													echo ".....Склейка ${name}_chunk.raw.img..."
 													simg2img ${name1} ${name2} ./output/${name}_chunk.raw.img
 													if [ "$?" -eq "0" ]; then
-														#echo
 														echo ".....Успешно создан файл ${name}_chunk.raw.img"
 														echo ".....Сохранено в /data/local/UnpackerQfil/output"
 														echo
@@ -5487,7 +5477,6 @@ main_menu() {
 													echo ".....Склейка ${name}_chunk.raw.img..."
 													simg2img ${name1} ${name2} ./output/${name}_chunk.raw.img
 													if [ "$?" -eq "0" ]; then
-														#echo
 														echo ".....Успешно создан файл ${name}_chunk.raw.img"
 														echo ".....Сохранено в /data/local/UnpackerQfil/output"
 														echo
@@ -5499,9 +5488,6 @@ main_menu() {
 												fi
 											done
 										fi
-
-										#new str
-
 										for name in "super" "system" "vendor" "userdata"; do
 											obraz=$name.raw.img
 
@@ -5511,9 +5497,6 @@ main_menu() {
 												fi
 											done
 											rab_file="$(busybox cat rab_file.txt)"
-
-
-
 											if [ ! -z $rab_file ]; then
 												check_name="$(busybox cat $rab_file | busybox awk -v var="$name" -F"filename=" '$2 ~ var { print $2}' | busybox cut -d" " -f1 | busybox sed '1!d; s!"!!g')"
 												if [ -f ./$check_name ]; then
@@ -5549,7 +5532,6 @@ main_menu() {
 													echo ".....Нет файла \"$check_name\" в /data/local/UnpackerQfil" >>qfil.log
 												fi
 											else
-												#clear
 												echo
 												echo ".....Нет нужного файла .xml в /data/local/UnpackerQfil" >>qfil.log
 											fi
@@ -5848,10 +5830,7 @@ main_menu() {
 							read b && $b
 							if [ $(echo $?) -eq 0 ]; then
 								clear
-								#dir_dat=/data/local/binary
 								nd=$(echo $b | busybox awk '{ print $2 }' | busybox sed 's!^/!!')
-								#v=$(busybox find . -maxdepth 1 -iname '*.app' 2> /dev/null | busybox sed 's!./!!')
-
 								v=$(for a in $(busybox find . -maxdepth 1 -iname '*.app' -type f | busybox sed 's!./!!'); do
 
 									if [ ! -z "$(busybox hexdump -C -n 100 "$a" | busybox grep -o "55 aa 5a a5")" ]; then
@@ -6225,7 +6204,7 @@ main_menu() {
 																echo ".....Error! Ошибка при извлечении!"
 																echo
 															fi
-														#fi
+
 														else
 															echo
 															echo ".....Error! Ошибка при извлечении, нет update.img!"
@@ -6519,7 +6498,6 @@ main_menu() {
 						clear
 
 						aa() {
-							#m_name="$(busybox basename "$file" | busybox sed 's!.ofp$!!')"
 							cd /data/local/UnpackerSystem
 							if busybox test -s "$m_name"/super_map.csv; then
 								v="$(busybox cat "$m_name"/super_map.csv | busybox awk -F"," '! /nv_text/ { print $1"-"$2 }')"
@@ -6602,7 +6580,6 @@ main_menu() {
 							echo ".....Извлечение образов из "$file""
 							echo ".....Ждём..."
 							echo
-							#busybox cp -f log.txt "$m_name"/log.txt
 
 							python31 /data/local/binary/OppoDecrypt-main -c mtk "$file" /"$ofp_dir"/"$m_name" 1>log.txt
 							if [ -z "$(busybox cat log.txt | busybox tail -3 | busybox grep "ERROR")" -a -s log.txt ]; then
@@ -6625,35 +6602,16 @@ main_menu() {
 							fi
 
 							busybox cp -f log.txt "$m_name"/log.txt
-
-							#if [ ! -z "$(busybox cat log.txt | busybox grep -E "Files successfully|Done. Extracted")" ]; then
-							#echo
-							#echo ".....Образы успешно извлечены в /data/local/UnpackerSystem/$m_name"
-							#echo
-							#ofp_exit="10"
-							#else
-							#echo
-							#echo ".....Ошибка при извлечении!"
-							#echo
-							#fi
-
 							check_sup="$(busybox cat log.txt | busybox awk '/super.[0-9]/ { print $5 }' | busybox sed 's!"!!g')"
 							if [ "$ofp_exit" == "10" -a ! -z "$check_sup" ]; then
-								#>super_simg
 								echo
 								echo ".....Найден super.img, разбитый на части!"
 								if [ "$check_pack" == "0" ]; then
-									#i=0
 									echo "$check_sup" | while read a; do
-										#let i=i+1
-										#f="$m_name/super."$i".img"
 										f="$m_name/${a}"
-										#echo -ne "$f " >> super_simg
 										if [ ! -z "$(echo "$a" | busybox grep ".img")" ]; then
 											echo -ne "$f " >>super_simg
-										#busybox mv "$m_name"/"$a" "$f"
 										else
-											#busybox mv "$m_name"/"$a".img "$f"
 											echo -ne "${f}.img " >>super_simg
 										fi
 									done
@@ -6787,10 +6745,6 @@ main_menu() {
 							echo
 							select img in "Распаковать прошивку .ofp|.ops" "Выход в главное меню" "Завершение работы"; do
 								case $REPLY in
-								#1 ) #clear
-								#check_pack=0
-								#ofp_extract
-								#break ;;
 								1)
 									clear
 									check_pack=1
@@ -6880,14 +6834,12 @@ main_menu() {
 													echo ".....Образы успешно извлечены!"
 													echo ".....Сохранено в "$pac_dir"/"$name_pac""
 													echo
-												#main_menu
-												#return
 												else
 													echo
 													echo "......Error...Ошибка при извлечении образов!"
 													echo
-												#main_menu
-												#return
+
+
 												fi
 												#return
 												main_menu
@@ -7142,17 +7094,14 @@ main_menu() {
 							busybox mount -o rw,remount /system 2>/dev/null
 							busybox find $(echo $PATH | busybox sed 's!:! !g') -name 'aik' -type f -o -iname 'aik-mobile' -type d | busybox xargs busybox rm -rf 2>/dev/null
 							busybox rm -rf /data/local/AIK-mobile /data/adb/modules/aik-mobile 2>/dev/null
-							#if [ $(echo $?) -eq 0 ]; then
 							echo
 							echo ".....AIK-mobile удалён!"
 							echo
-						#fi
+
 						fi
 						delit_uka="/data/adb/modules/UKA/uninstall.sh"
 						if busybox test -s "$delit_uka"; then
 							busybox chmod 755 "$delit_uka" && "$delit_uka"
-							#if [ $(echo $?) -eq 0 ]; then
-
 							reb
 							reboot
 
@@ -7167,8 +7116,6 @@ main_menu() {
 							reb
 							reboot recovery
 						fi
-						#fi
-						#fi
 						main_menu
 						break
 						;;
