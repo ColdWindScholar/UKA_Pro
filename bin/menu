@@ -5,8 +5,8 @@ dir="/data/local/binary"
 export PATH=/data/local/binary:$PATH
 #export LD_LIBRARY_PATH="/data/local/binary/lib"
 #PS3=" =>: "
-/data/local/binary/lib/busybox find /data/local/UnpackerSystem/gen_keys -maxdepth 1 -empty -exec busybox rm -rf {} \; 2>/dev/null
-/data/local/binary/lib/busybox find /data/local/UnpackerSystem/extract_keys -maxdepth 1 -empty -exec busybox rm -rf {} \; 2>/dev/null
+/data/local/binary/lib/busybox find /data/local/UnpackerSystem/gen_keys -maxdepth 1 -empty -exec busybox rm -rf {} \;
+/data/local/binary/lib/busybox find /data/local/UnpackerSystem/extract_keys -maxdepth 1 -empty -exec busybox rm -rf {} \;
 
 config="config/$pack_d"
 
@@ -1099,7 +1099,7 @@ main_menu() {
 									if [ ! -z "$(echo "$size_mb" | busybox grep -Eow "6|16|32|35|40|54|64|96|100|128")" ]; then
 										size_orig="$(busybox expr "$size_mb" \* 1024 \* 1024)"
 										if busybox test "$size_img" -eq "$size_orig"; then
-											busybox truncate -s "$size_orig" "$pack_file" 2>/dev/null
+											busybox truncate -s "$size_orig" "$pack_file"
 										fi
 									fi
 								fi
@@ -1348,10 +1348,10 @@ main_menu() {
 										clear
 										/data/local/AIK-mobile/cleanup.sh
 										/data/local/AIK-mobile/bin/aik --uninstall
-										busybox mount -o rw,remount / 2>/dev/null
-										busybox mount -o rw,remount /system 2>/dev/null
-										busybox find $(echo $PATH | busybox sed 's!:! !g') -name 'aik' -type f | xargs busybox rm -f 2>/dev/null
-										busybox rm -rf /data/local/AIK-mobile /data/adb/modules/aik-mobile 2>/dev/null
+										busybox mount -o rw,remount /
+										busybox mount -o rw,remount /system
+										busybox find $(echo $PATH | busybox sed 's!:! !g') -name 'aik' -type f | xargs busybox rm -f
+										busybox rm -rf /data/local/AIK-mobile /data/adb/modules/aik-mobile
 
 										if [ $(echo $?) -eq 0 ]; then
 											echo
@@ -1936,7 +1936,7 @@ main_menu() {
 								if [ ! -z "$(busybox hexdump -C -n 2000 "$v" | busybox awk '/00000430/ { print $10$11 }' | busybox grep "53ef")" ]; then
 									echo $v
 								else
-									echo $v >/dev/null
+									echo $v
 								fi
 							else
 								echo $v >>$my_dir/spars
@@ -2111,7 +2111,7 @@ main_menu() {
 							if busybox test -s /data/local/binary/papka.txt; then
 								p="$(busybox cat /data/local/binary/papka.txt 2>/dev/null | busybox sed -e 's!|$!!; s!\+!\\+!')"
 
-								b=$(busybox mount | busybox cut -d" " -f3 | busybox grep -E "$p") 2>/dev/null
+								b=$(busybox mount | busybox cut -d" " -f3 | busybox grep -E "$p")
 							else
 								unset b
 							fi
@@ -3513,7 +3513,7 @@ main_menu() {
 										erof="1"
 										set -- $erof
 										nn
-										mkdir /data/local/UnpackerSystem/erofs 2>/dev/null
+										mkdir /data/local/UnpackerSystem/erofs
 										cd /data/local/UnpackerSystem/erofs
 										pack_img_new
 										break
@@ -3525,7 +3525,7 @@ main_menu() {
 										sparse_erof="1"
 										set -- $sparse_erof
 										nn
-										mkdir /data/local/UnpackerSystem/erofs 2>/dev/null
+										mkdir /data/local/UnpackerSystem/erofs
 										cd /data/local/UnpackerSystem/erofs
 										pack_img_erofs
 										break
@@ -3539,7 +3539,7 @@ main_menu() {
 										ext_erof="1"
 										set -- $ext_erof
 										nn
-										mkdir /data/local/UnpackerSystem 2>/dev/null
+										mkdir /data/local/UnpackerSystem
 										cd /data/local/UnpackerSystem
 										pack_img_erofs
 										break
@@ -3616,7 +3616,7 @@ main_menu() {
 										erof="1"
 										set -- $erof
 										nn
-										mkdir /data/local/UnpackerSystem/erofs 2>/dev/null
+										mkdir /data/local/UnpackerSystem/erofs
 										cd /data/local/UnpackerSystem/erofs
 										pack_img_raw_new
 										break
@@ -3628,7 +3628,7 @@ main_menu() {
 										sparse_erof="0"
 										set -- $sparse_erof
 										nn
-										mkdir /data/local/UnpackerSystem/erofs 2>/dev/null
+										mkdir /data/local/UnpackerSystem/erofs
 										cd /data/local/UnpackerSystem/erofs
 										pack_img_erofs
 										break
@@ -3642,7 +3642,7 @@ main_menu() {
 										ext_erof="1"
 										set -- $ext_erof
 										nn
-										mkdir /data/local/UnpackerSystem 2>/dev/null
+										mkdir /data/local/UnpackerSystem
 										cd /data/local/UnpackerSystem
 										pack_img_erofs
 										break
@@ -4302,14 +4302,6 @@ main_menu() {
 								clear
 								dir_dat=/data/local/binary
 								nd=$(echo $b | busybox awk '{ print $2 }' | busybox sed 's!^/!!')
-								#v=$(busybox find . -maxdepth 1 -name 'vendor*.img' -type f -o -name 'system*.img' -type f | busybox sed 's!./!!')
-
-								#v=$(for raw in $(busybox find . -maxdepth 1 -name 'vendor*.img' -type f -o -name 'system*.img' -type f 2> /dev/null); do
-								#if [ -z "$(busybox hexdump -C -n 4 "$raw" | busybox grep '3a ff 26 ed')" ]; then
-								#echo "$raw"
-								#fi
-								#done)
-
 								v=$(for raw in $(busybox find -maxdepth 1 -name '*.img' -type f | busybox sed 's!./!!'); do
 									if [ -z "$(busybox hexdump -C -n 2000 "$raw" | busybox grep -E '3a ff 26 ed')" -a ! -z "$(busybox hexdump -C -n 2000 "$raw" | busybox awk '/00000430/ { print $10$11 }' | busybox grep "53ef")" ]; then
 
@@ -4723,10 +4715,7 @@ main_menu() {
 											nd=$(echo $b | busybox awk '{ print $2 }' | busybox sed 's!^/!!')
 
 											v=$(for a in $(busybox find -maxdepth 1 -name "*.img" -o -name '*.win' -type f -o -name "vbmeta*" -a -type l | busybox sed 's!./!!'); do
-
-												#if [ ! -z "$(busybox hexdump -C -n 20 "$a" 2> /dev/null | busybox grep -o "41 56 42 30")" -o ! -z "$(busybox hexdump -C -n 2000 "$a" 2> /dev/null | busybox grep '3a ff 26 ed')" -o ! -z "$(busybox hexdump -C -n 2000 "$a" 2> /dev/null | busybox awk '/00000430/ { print $10$11 }' | busybox grep "53ef")" -o ! -z "$(busybox hexdump -C -n 2000 "$a" 2> /dev/null | busybox grep -o '41 4e 44 52 4f 49 44 21')" -o ! -z "$(busybox hexdump -C -n 2000 "$a" 2> /dev/null | busybox grep -o 'e2 e1 f5 e0')" -o ! -z "$(busybox hexdump -C -n 2000 "$a" 2> /dev/null | busybox grep -o '10 20 f5 f2 ')" ]; then
 												echo "$a"
-												#fi
 											done)
 
 											set -- $v
@@ -4837,9 +4826,8 @@ main_menu() {
 
 											v=$(for a in $(busybox find . -maxdepth 1 -name "*.img" -o -name "*.win" -type f | busybox sed 's!./!!'); do
 
-												#if [ ! -z "$(busybox hexdump -C -n 20 "$a" 2> /dev/null | busybox grep -o "41 56 42 30")" -o ! -z "$(busybox hexdump -C -n 2000 "$a" 2> /dev/null | busybox grep '3a ff 26 ed')" -o ! -z "$(busybox hexdump -C -n 2000 "$a" 2> /dev/null | busybox awk '/00000430/ { print $10$11 }' | busybox grep "53ef")" -o ! -z "$(busybox hexdump -C -n 2000 "$a" 2> /dev/null | busybox grep -o '41 4e 44 52 4f 49 44 21')" -o ! -z "$(busybox hexdump -C -n 2000 "$a" | busybox grep -o 'e2 e1 f5 e0')" -o ! -z "$(busybox hexdump -C -n 2000 "$a" | busybox grep -o '10 20 f5 f2 ')" ]; then
 												echo "$a"
-												#fi
+
 											done)
 
 											set -- $v
@@ -4927,13 +4915,13 @@ main_menu() {
 												if [ ! -z "$file" -a "$REPLY" -lt "$i" ]; then
 													rs="$(echo "$file" | busybox sed 's!RSA!!')"
 													out_gen_key=/data/local/UnpackerSystem/gen_keys
-													mkdir "$out_gen_key" 2>/dev/null
+													mkdir "$out_gen_key"
 													time="$(busybox date +%H_%M_%S)"
 													clear
 													echo
 													echo ".....Создание ключей ${file}_${time}_private.pem и ${file}_${time}_pubkey.pem..."
 
-													openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:"$rs" -outform PEM -out "$out_gen_key"/"$file"_${time}_private.pem &>/dev/null
+													openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:"$rs" -outform PEM -out "$out_gen_key"/"$file"_${time}_private.pem
 													if [ $(echo $?) -eq 0 ]; then
 
 														echo
@@ -5142,8 +5130,6 @@ main_menu() {
 										clear
 										dir_dat=/data/local/binary
 										nd=$(echo $b | busybox awk '{ print $2 }' | busybox sed 's!^/!!')
-
-										#v=$(busybox find . -maxdepth 1 -name '*.lz4' 2> /dev/null | busybox sed 's!./!!')
 
 										v=$(for fol in $(busybox find . -maxdepth 1 -name "*.lz4" -o -name "*.lzma" -o -name "*.zst" -o -name "*.xz" -type f); do
 											mag="$(/data/local/binary/file -m /data/local/binary/magic "$fol" 2>/dev/null | busybox awk '{ print $2 }')"
@@ -5456,7 +5442,6 @@ main_menu() {
 									clear
 									cd /data/local/UnpackerQfil
 									>qfil.log
-									#name_qfil="system_|vendor_|userdata_|.xml"
 									if [ ! -z "$(busybox ls | busybox grep -E "super.img.*[0-9]|system_|vendor_|userdata_|.xml|chunk")" ]; then
 
 										if [ ! -z "$(busybox ls *chunk* 2>/dev/null)" ]; then
@@ -5465,9 +5450,7 @@ main_menu() {
 											echo ".....Найдены файлы \"*sparsechunk*\""
 											echo
 											for name in "super" "system" "vendor" "product"; do
-												#name1=$(busybox find . -name "${name}*sparsechunk.*[0-9]" -a ! -name "${name}*sparsechunk.*[0-9][0-9]" | sort -n)
 												name1=$(find . -maxdepth 1 -name "${name}*chunk*" | sort -n | busybox grep -v "[0-9][0-9]")
-												#name2=$(busybox find . -name "${name}*sparsechunk.*[0-9][0-9]" | sort -n)
 												name2=$(find . -maxdepth 1 -name "${name}*chunk*" | sort -n | busybox grep "[0-9][0-9]")
 												if [ ! -z "${name1}" ]; then
 													mkdir ./output
@@ -5521,7 +5504,6 @@ main_menu() {
 
 										for name in "super" "system" "vendor" "userdata"; do
 											obraz=$name.raw.img
-											#rab_file=$(busybox find -name "rawprogram*" -exec busybox grep -rl "$name" {} \; | busybox sed 's!./!!' | busybox tail -1)
 
 											busybox find -name "rawprogram*.xml" -exec busybox grep -rl "$name" {} \; | busybox sed 's!./!!' | while read a; do
 												if [ "$(busybox cat "$a" | busybox grep "$name" | busybox wc -l)" -ge "3" ]; then
@@ -5530,9 +5512,7 @@ main_menu() {
 											done
 											rab_file="$(busybox cat rab_file.txt)"
 
-											#check_name="$(busybox cat $rab_file | busybox grep -o "${name}.*" | busybox head -1 | busybox awk '{print $1}' | busybox sed 's!"!!g')"
 
-											#check_name="$(busybox cat $rab_file | busybox awk -v var="$name" -F"filename=" '$2 ~ var { print $2}' | busybox cut -d" " -f1 | busybox sed '1!d; s!"!!g')"
 
 											if [ ! -z $rab_file ]; then
 												check_name="$(busybox cat $rab_file | busybox awk -v var="$name" -F"filename=" '$2 ~ var { print $2}' | busybox cut -d" " -f1 | busybox sed '1!d; s!"!!g')"
