@@ -5122,7 +5122,7 @@ case $REPLY in
  #name2=$(busybox find . -name "${name}*sparsechunk.*[0-9][0-9]" | sort -n)
  name2=$(find . -maxdepth 1 -name "${name}*chunk*" | sort -n | busybox grep "[0-9][0-9]")
  if [ ! -z "${name1}"  ]; then
- mkdir ./output 2> /dev/null
+ mkdir ./output
  
  #name_out=$(echo $name1 | busybox sed 's!./!!' | busybox awk -F"img" '{ print $1 }')
  echo ".....Склейка ${name}_chunk.raw.img..."
@@ -5151,7 +5151,7 @@ case $REPLY in
 
  name2=$(find . -maxdepth 1 -name "super.img*[0-9]" | sort -n | busybox grep "[0-9][0-9]")
  if [ ! -z "${name1}"  ]; then
- mkdir ./output 2> /dev/null
+ mkdir ./output
  
  echo ".....Склейка ${name}_chunk.raw.img..."
  simg2img ${name1} ${name2} ./output/${name}_chunk.raw.img
@@ -5180,7 +5180,7 @@ case $REPLY in
  echo "$a" > rab_file.txt
  fi
  done
- rab_file="$(busybox cat rab_file.txt 2> /dev/null)"
+ rab_file="$(busybox cat rab_file.txt)"
  
 
  
