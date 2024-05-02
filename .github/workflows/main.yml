@@ -1,0 +1,46 @@
+name: "Build Tool"
+permissions:
+  contents: write
+  discussions: write
+on:
+  workflow_dispatch:
+jobs:
+  build:
+    needs: [build-linux]
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v3
+      - name: Rename Tool
+        run: |
+          mv UKA/UKA.zip UKA
+      - name: Upload release
+        uses: ncipollo/release-action@v1
+        with:
+          allowUpdates: true
+          omitBodyDuringUpdate: true
+          removeArtifacts: true
+          name: "UKA-${{ github.run_number }}"
+          tag: "CI_BUILD_${{ github.run_number }}"
+          body: |
+            Build times: ${{ github.run_number }}
+          artifacts: "*.zip"
+
+  build-linux:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Tool
+        run: |
+          tar caf bin.tar.xz bin
+          tar caf binary.tar.xz local
+          rm -rf bin
+          rm -rf lcal
+          rm -rf .github
+          zip -r -x=*.zip UKA.zip .
+      - name: Upload Build
+        if: success()
+        uses: actions/upload-artifact@v3
+        with:
+          name: UKA
+          path: './UKA.zip'
