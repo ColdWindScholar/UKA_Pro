@@ -14,5 +14,8 @@
 then
 
 	menu
-	
+or
+```
+menu_eu
+```
  And you will see the main menu.
