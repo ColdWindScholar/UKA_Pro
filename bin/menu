@@ -48,9 +48,6 @@ nn1() {
 	echo ".....При вводе 0, папка сохранения: /data/local/UnpackerSuper/output"
 	echo ".....При вводе 1, папка сохранения: /data/local/UnpackerSuper"
 	echo ".....Введите 0, 1, или свой путь к папке сохранения образа..."
-	#echo "  например: 0"
-	#echo "  например: /sdcard/test"
-	#echo "  пример ввода: /storage/F960-18E7"
 	echo
 	read h && if [ "$h" = "0" ]; then
 		outdir=/data/local/UnpackerSystem
@@ -110,9 +107,7 @@ qsn() {
 				case $REPLY in
 				[1-9]*)
 					i="$#"
-					#j="$#"
 					let i=i+1
-					#let j=j+2
 					file=$(echo "$@" | busybox cut -d' ' -f"$REPLY")
 					if [ ! -z "$file" -a "$REPLY" -lt "$i" ]; then
 						if [ -d "$file" ]; then
@@ -131,15 +126,12 @@ qsn() {
 						break
 					elif [ "$REPLY" == "$i" ]; then
 						clear
-						#main_menu
 						outdir="/data/local/UnpackerSystem"
 						set -- $outdir
 						return
 						break
 					else
 						clear
-						#echo
-						#echo "      Вводите цифры, соответствующие меню."
 						outdir="/data/local/UnpackerSystem"
 						set -- $outdir
 						return
@@ -149,8 +141,6 @@ qsn() {
 					;;
 				*)
 					clear
-					#echo
-					#echo "      Вводите цифры, соответствующие меню."
 					outdir="/data/local/UnpackerSystem"
 					set -- $outdir
 					return
@@ -185,7 +175,6 @@ nn() {
 	echo "     Выбор папки сохранения образа    "
 	echo "     -----------------------------    "
 	echo
-	#echo ".....При вводе 0, папка сохранения: /data/local/UnpackerSystem"
 	echo ".....При нажатии \"Enter\", папка сохранения /data/local/UnpackerSystem..."
 	echo ".....При вводе 0, выбор папки из списка в файле /data/local/binary/path_list.txt..."
 	echo
@@ -194,10 +183,6 @@ nn() {
 	read h && if [ "$h" = "0" ]; then
 
 		qsn #функция выбора папки из списка.
-		#set -- $outdir
-		#mkdir "$outdir" 2> /dev/null
-
-		#clear
 		echo
 		echo "    Установлена папка сохранения выходного образа:"
 		echo "    $outdir"
@@ -265,7 +250,6 @@ nnnnn() {
 		outdir=/"$(echo "$h" | busybox sed 's!^/!!')"
 		set -- $outdir
 		make_ext4fs -l 10485760 "$outdir"/testuka >/dev/null
-		#if [ $(echo $?) -eq 0 ]; then
 		if busybox test -s "$outdir"/testuka; then
 
 			clear
@@ -312,17 +296,10 @@ check_status() {
 }
 
 check_size_img() {
-	#cd /data/local/UnpackerSystem
 	echo
 	echo ".....Определение размера для сборки..."
 	echo
-
-	#i="$(avbtool add_hashtree_footer --partition_size "$(busybox expr $(busybox du -s "$pack_d" | busybox awk '{ print $1 }') \* 1024)" --do_not_generate_fec --calc_max_image_size)"
-
 	i="$(busybox expr $(busybox du -s "$pack_d" | busybox awk '{ print $1 }') \* 1024)"
-
-	#i=$(busybox cat "$config"/"$pack_d"_size.txt)
-
 	while check_status; do
 		if [ "$gg" -eq 1 ]; then
 			if busybox test -s "$config"/"$pack_d"_avb.img; then
@@ -392,8 +369,6 @@ my_size_add() {
 	echo
 	read a && set -- "$a"
 	if [ $(echo $?) -eq 0 ]; then
-		#real_size_orig="$(cat "$config"/"$pack_d"_size.txt)"
-		#real_size_orig_mb=$(busybox expr "$real_size_orig" / 1024 / 1024)
 		size_add=$(busybox expr "$a" \* 1024 \* 1024 / 4096 \* 4096)
 		r_size=$(busybox expr "$real_size_orig" + "$size_add")
 		real_size=$(busybox expr "$r_size" / 1024 / 1024)
@@ -419,20 +394,12 @@ fff_add() {
 		echo "...Оригинальный размер образа ~ "$real_size_orig_mb" mb"
 		echo "...Собрать образ с размером ~ ${real_size} mb?"
 		echo
-	#else
-	#echo
-	#echo "...Введённый размер не кратен \"4096\", собрать образ с размером: $r_size байт?"
-	#echo
 	fi
 	select img in "Да" "Нет, ввести другой размер" "Выход в главное меню"; do
 		case $REPLY in
 		1)
 			set -- "$r_size"
 			if [ ! -s "$config"/"$pack_d"*_avb.img ]; then
-				#set -- "$b"
-				#busybox cp -f "$config"/"$pack_d"*_avb.img "$config"/"$pack_d"_myavb.img
-				#cat $file_sh > "$config"/"$pack_d"_gsize.sh
-				#else
 				busybox sed -e "s!-l [0-9]*!-l "$r_size"!" $file_sh >"$config"/"$pack_d"_gsize.sh
 			fi
 			. $file_size
@@ -503,10 +470,6 @@ fff() {
 		1)
 			set -- "$r_size"
 			if [ ! -s "$config"/"$pack_d"*_avb.img ]; then
-				#set -- "$b"
-				#busybox cp -f "$config"/"$pack_d"*_avb.img "$config"/"$pack_d"_myavb.img
-				#cat $file_sh > "$config"/"$pack_d"_gsize.sh
-				#else
 				busybox sed -e "s!-l [0-9]*!-l "$r_size"!" $file_sh >"$config"/"$pack_d"_gsize.sh
 			fi
 			. $file_size
@@ -557,17 +520,13 @@ pack_dat() {
 			case $REPLY in
 			[1-9]*)
 				i="$#"
-
 				let i=i+1
-
 				file=$(echo "$@" | busybox cut -d' ' -f"$REPLY")
 				if [ ! -z "$file" -a "$REPLY" -lt "$i" ]; then
 					clear
 					pack_d="$file"
 					config="config/$pack_d"
-
 					size=100
-					#. ${dir}/pack_img_dat
 					. $file_size
 					main_menu
 					return
@@ -627,9 +586,7 @@ pack_dat_my() {
 			case $REPLY in
 			[1-9]*)
 				i="$#"
-
 				let i=i+1
-
 				file=$(echo "$@" | busybox cut -d' ' -f"$REPLY")
 				if [ ! -z "$file" -a "$REPLY" -lt "$i" ]; then
 					clear
@@ -643,7 +600,6 @@ pack_dat_my() {
 					else
 						file_sh=./"$config"/"$pack_d"*_pack_sparse.sh
 					fi
-					#file_size=${dir}/pack_img_dat
 					if [ "$size_add" == "1" ]; then
 						my_size_add
 					else
@@ -714,7 +670,6 @@ pack_dat_new() {
 				i="$#"
 				j="$#"
 				e="$#"
-
 				let i=i+1
 				let j=j+2
 				let e=e+3
@@ -730,17 +685,14 @@ pack_dat_new() {
 					if busybox test "$size_orig" -le "10485760"; then
 						get_add="8192"
 						check_size_img
-						#size_new="$(busybox expr "$size_orig" \* 109 / 105 / 4096 \* 4096)"
 					else
 						get_add="1048576"
 						check_size_img
-						#size_new="$(busybox expr "$size_orig" \* 12 / 11 / 4096 \* 4096)"
 					fi
 					size=111
 					set -- $size
 					r_size="$size_new"
 					set -- $r_size
-					#file_size=${dir}/pack_img_dat
 					if busybox test -s ./"$config"/"$pack_d"*_avb.img; then
 						file_sh=./"$config"/"$pack_d"*_pack_avb_sparse.sh
 					else
@@ -764,17 +716,14 @@ pack_dat_new() {
 						if busybox test "$size_orig" -le "10485760"; then
 							get_add="8192"
 							check_size_img
-							#size_new="$(busybox expr "$size_orig" \* 109 / 105 / 4096 \* 4096)"
 						else
 							get_add="1048576"
 							check_size_img
-							#size_new="$(busybox expr "$size_orig" \* 12 / 11 / 4096 \* 4096)"
 						fi
 						size=111
 						set -- $size
 						r_size="$size_new"
 						set -- $r_size
-						#file_size=${dir}/pack_img_dat
 						if busybox test -s ./"$config"/"$pack_d"*_avb.img; then
 							file_sh=./"$config"/"$pack_d"*_pack_avb_sparse.sh
 						else
@@ -1032,7 +981,6 @@ main_menu() {
 							clear
 							aik_pack() {
 								pack_file="$(echo "$1" | busybox sed 's!./!!')"
-								#pack_file="$1"
 								avb_dir=/data/local/AIK-mobile/split_img
 								if busybox test -s "$avb_dir"/avb.img; then
 									size_orig="$(busybox cat "$avb_dir"/avb_size.txt)"
@@ -1040,21 +988,6 @@ main_menu() {
 									prop_avb="$(busybox cat "$avb_dir"/avb.img | busybox awk '/    Prop:/ { print "--prop"" "$2":"$4 }' | tr '\n' ' ')"
 
 									check_alg="$(busybox cat "$avb_dir"/avb.img | busybox awk '/^Algorithm:/ { print $2 }')"
-
-									#if [ "$check_alg" != "NONE" -a ! -z "$check_alg" ]; then
-									# if [ "$check_alg" == "SHA256_RSA2048" ]; then
-									# sign_file="--key /data/local/binary/testkey_rsa2048.pem"
-									# sign_print="--algorithm $check_alg"
-									# elif [ "$check_alg" == "SHA256_RSA4096" ]; then
-									#sign_file="--key /data/local/binary/testkey_rsa4096.pem"
-									# sign_print="--algorithm $check_alg"
-
-									#elif [ "$check_alg" == "SHA256_RSA8192" ]; then
-									#sign_file="--key /data/local/binary/testkey_rsa8192.pem"
-									# sign_print="--algorithm $check_alg"
-									# fi
-									#fi
-
 									if [ "$check_alg" != "NONE" -a ! -z "$check_alg" ]; then
 										case "$check_alg" in
 										"SHA256_RSA2048")
@@ -1074,7 +1007,6 @@ main_menu() {
 									fi
 
 									echo "avbtool add_hash_footer --image "$pack_file" --partition_size "$size_orig" "$prop_avb"--partition_name "$part_name" "$sign_print" "$sign_file"" >"$avb_dir"/avb.sh
-									#chmod 755 "$avb_dir"/avb.sh && "$avb_dir"/avb.sh && busybox rm -f "$avb_dir"/avb.sh
 									chmod 755 "$avb_dir"/avb.sh && "$avb_dir"/avb.sh
 									if [ $(echo $?) -eq 0 ]; then
 										echo
@@ -1140,9 +1072,6 @@ main_menu() {
 								bootpatch unpack ../$file 2>../path_dtb.txt
 								if [ "$?" -eq "0" ]; then
 									echo >>../path_dtb.txt
-
-									#echo
-									#echo "...Ищем значения для патча..."
 									clear
 									for file_path in $(busybox find -maxdepth 1 -name "*dtb"); do
 										[ -f $file_path ] && echo
@@ -1151,7 +1080,6 @@ main_menu() {
 									if [ ! -z "$(busybox cat ../path_dtb.txt | busybox grep ".*,avb")" ]; then
 										echo >>../path_dtb.txt
 										bootpatch repack ../$file 2>>../path_dtb.txt && busybox cp new-boot.img ../boot_noavb.img && busybox rm -rf ../path
-										#echo >> ../path_dtb.txt
 										echo
 										echo "...Успешно завершено, получен файл: \"boot_noavb.img\"!"
 										echo
@@ -1400,12 +1328,8 @@ main_menu() {
 					done
 				else
 					echo
-					#echo -en "\E[31;47;1m"
 					echo ".....AIK-mobile не установлен!"
 					echo
-					#echo -en "\E[37;0m"
-					#echo -en "\E[37;1m"
-
 					main_menu
 					return
 				fi
@@ -1419,11 +1343,7 @@ main_menu() {
 
 			my_system() {
 				cd /data/local/UnpackerSystem
-
-				#clear
 				dir_dat=/data/local/binary
-				#b=/data/local/UnpackerSuper
-				#nd=$(echo $b | busybox awk '{ print $2 }' | busybox sed 's!^/!!')
 				v=$(for a in $(busybox find . -maxdepth 1 -name '*.img' -type f | busybox sed 's!./!!'); do
 
 					ext_check "$a"
@@ -1527,10 +1447,8 @@ main_menu() {
 			qqq() {
 				free_space="$(busybox df -h "$PWD" | busybox tail -1 | busybox awk '{ print $(NF-2) }')"
 				free_data="$(busybox df -h /data | busybox tail -1 | busybox awk '{ print $(NF-2) }')"
-				#echo "...В /${nd} свободно: $free_space"
 				echo -e "\033[33;1m...В /${nd} свободно: $free_space \033[0m"
 				if [ "$free_space" != "$free_data" ]; then
-					#echo "...В /data свободно: $free_data"
 					echo -e "\033[33;1m...В /data свободно: $free_data \033[0m"
 				fi
 				return
@@ -1553,11 +1471,6 @@ main_menu() {
 				elif [ "$nd" == "$(busybox cat "$dir_dat"/last.txt 2>/dev/null)" -a -d /"$nd" ]; then
 					cd /"$nd" && echo "$nd" >"$dir_dat"/last.txt
 				fi
-
-				#dir_dat=/data/local/binary
-				#b=/data/local/UnpackerSuper
-				#nd=$(echo $b | busybox awk '{ print $2 }' | busybox sed 's!^/!!')
-
 				echo
 				echo ".....Поиск образов..."
 				v=$(busybox find . -maxdepth 1 -name '*.img' -o -name '*.zst' -o -name '*.PARTITION' -type f -o -name '*.sin' -o -name '*.win' -type f | busybox sed 's!./!!' | while read a; do
@@ -1708,12 +1621,7 @@ main_menu() {
 								file=$(echo "$@" | busybox cut -d' ' -f"$REPLY")
 								if [ ! -z "$file" -a "$REPLY" -lt "$i" ]; then
 									clear
-									#if [ "$(echo "$file" | busybox grep "*..PARTITION$")" ]; then
-									#file=/"$nd"/"$(busybox mv "$file" "$file".img)"
-									#else
 									file=/"$nd"/"$file"
-									#fi
-
 									my_sin
 									main_menu
 									return
@@ -1853,10 +1761,6 @@ main_menu() {
 							return
 						fi
 
-						#my_super
-						#return
-						#main_menu
-						#return
 						break
 						;;
 					7)
@@ -1896,17 +1800,11 @@ main_menu() {
 			clear
 			my_mount() {
 
-				#check_mount
-				#if [ $(echo $?) -eq 0 ] ; then
-				#busybox rm -f /data/local/binary/papka.txt
-				#fi
-				#home_dir="/data/local/UnpackerSystem"
 				cd $home_dir
 				my_dir="/data/local/binary"
 				>$my_dir/mm
 				>$my_dir/mm1
 				>$my_dir/spars
-				#> $my_dir/fs_ext
 				echo
 				echo ".....Поиск образов..."
 
@@ -2659,7 +2557,6 @@ main_menu() {
 			cd /data/local/UnpackerSystem
 
 			check_d() {
-				#cd /data/local/UnpackerSystem
 				for a in $(busybox find -maxdepth 1 ! -name "." -type d | busybox sed 's!./!!'); do
 					if [ -f "config/"$a"/"$a"_file_contexts" ]; then
 						return 0
@@ -2849,7 +2746,6 @@ main_menu() {
 							file=$(echo "$@" | busybox cut -d' ' -f"$REPLY")
 							if [ ! -z "$file" -a "$REPLY" -lt "$i" ]; then
 								clear
-								#nd=data/local/UnpackerSystem
 								pack_d="$file"
 								config="config/$pack_d"
 
@@ -2911,13 +2807,10 @@ main_menu() {
 						case $REPLY in
 						[1-9]*)
 							i="$#"
-
 							let i=i+1
-
 							file=$(echo "$@" | busybox cut -d' ' -f"$REPLY")
 							if [ ! -z "$file" -a "$REPLY" -lt "$i" ]; then
 								clear
-								#nd=data/local/UnpackerSystem
 								pack_d="$file"
 								config="config/$pack_d"
 
@@ -2929,7 +2822,6 @@ main_menu() {
 								else
 									file_sh=./"$config"/"$pack_d"_pack.sh
 								fi
-								#my_size
 								if [ "$size_add" == "1" ]; then
 									my_size_add
 								else
@@ -2977,14 +2869,7 @@ main_menu() {
 			}
 
 			pack_img_raw_new() {
-
 				free_place
-				#if [ "$erof" == "1" ]; then
-				#cd /data/local/UnpackerSystem/erofs
-				#elif [ "$erof" == "0" ]; then
-				#cd /data/local/UnpackerSystem
-				#fi
-
 				b=$(for a in $(busybox find -maxdepth 1 ! -name "." -type d | busybox sed 's!./!!'); do
 					if [ -f "config/"$a"/"$a"_file_contexts" ]; then
 						echo "$a"
@@ -3010,7 +2895,6 @@ main_menu() {
 							file=$(echo "$@" | busybox cut -d' ' -f"$REPLY")
 							if [ ! -z "$file" -a "$REPLY" -lt "$i" ]; then
 								clear
-								#nd=data/local/UnpackerSystem
 								pack_d="$file"
 								config="config/$pack_d"
 
@@ -3019,11 +2903,9 @@ main_menu() {
 								if busybox test "$size_orig" -le "10485760"; then
 									get_add="8192"
 									check_size_img
-									#size_new="$(busybox expr "$size_orig" \* 109 / 105 / 4096 \* 4096)"
 								else
 									get_add="1048576"
 									check_size_img
-									#size_new="$(busybox expr "$size_orig" \* 12 / 11 / 4096 \* 4096)"
 								fi
 								size=111
 								set -- $size
@@ -3121,13 +3003,6 @@ main_menu() {
 
 			pack_img_new() {
 				free_place
-
-				#if [ "$erof" == "1" ]; then
-				#cd /data/local/UnpackerSystem/erofs
-				#elif [ "$erof" == "0" ]; then
-				#cd /data/local/UnpackerSystem
-				#fi
-
 				b=$(for a in $(busybox find -maxdepth 1 ! -name "." -type d | busybox sed 's!./!!'); do
 					if [ -f "config/"$a"/"$a"_file_contexts" ]; then
 						echo "$a"
@@ -3153,7 +3028,6 @@ main_menu() {
 							file=$(echo "$@" | busybox cut -d' ' -f"$REPLY")
 							if [ ! -z "$file" -a "$REPLY" -lt "$i" ]; then
 								clear
-								#nd=data/local/UnpackerSystem
 								pack_d="$file"
 								config="config/$pack_d"
 
@@ -3162,11 +3036,9 @@ main_menu() {
 								if busybox test "$size_orig" -le "10485760"; then
 									get_add="8192"
 									check_size_img
-									#size_new="$(busybox expr "$size_orig" \* 109 / 105 / 4096 \* 4096)"
 								else
 									get_add="1048576"
 									check_size_img
-									#size_new="$(busybox expr "$size_orig" \* 12 / 11 / 4096 \* 4096)"
 								fi
 								size=111
 								set -- $size
@@ -3200,11 +3072,9 @@ main_menu() {
 									if busybox test "$size_orig" -le "10485760"; then
 										get_add="8192"
 										check_size_img
-										#size_new="$(busybox expr "$size_orig" \* 109 / 105 / 4096 \* 4096)"
 									else
 										get_add="1048576"
 										check_size_img
-										#size_new="$(busybox expr "$size_orig" \* 12 / 11 / 4096 \* 4096)"
 									fi
 									size=111
 									set -- $size
@@ -3396,11 +3266,6 @@ main_menu() {
 							elif [ "$REPLY" -eq "$i" ]; then
 								for papka in "$@"; do
 									clear
-									#if [ "$erof" == "0" ]; then
-									#erof="0"
-									#elif [ "$erof" == "1" ]; then
-									#erof="1"
-									#fi
 									config_e2fs="1"
 									set -- $config_e2fs
 									pack_d="$papka"
@@ -3499,8 +3364,6 @@ main_menu() {
 										nn
 										sparse_e2fs="1"
 										set -- $sparse_e2fs
-										#config_e2fs="1"
-										#set -- $config_e2fs
 										erof="0"
 										set -- $erof
 										pack_img_e2fs
@@ -3602,8 +3465,6 @@ main_menu() {
 										nn
 										sparse_e2fs="0"
 										set -- $sparse_e2fs
-										#config_e2fs="1"
-										#set -- $config_e2fs
 										erof="0"
 										set -- $erof
 										pack_img_e2fs
@@ -3934,8 +3795,6 @@ main_menu() {
 			my5
 			break
 			;;
-			#Конец функции сборка .img
-
 		8)
 			clear
 			my6() {
@@ -4513,9 +4372,6 @@ main_menu() {
 											rolbak="$(avbtool info_image --image "$file" | busybox awk '/Rollback Index:/ NR == 1 {if($3 == 0) { print $3 }}')"
 											return
 										}
-										#true_vb
-
-										#if [ "$tru" != 3 -o "$rolbak" != 0 ]; then
 										real_nd="$(echo /"$nd" | busybox grep -o "/dev/block")"
 										if [ -z "$real_nd" ]; then
 
@@ -4523,24 +4379,22 @@ main_menu() {
 											file_orig="$file"
 											file_path="${file_name}_path.img"
 											busybox cp -f "$file_orig" "$file_path"
-										#python39 /data/local/binary/bin_system/int.py "$file" "7b" "03"
-										#echo '7b: 03' | xxd -r - "$file"
 										else
 											file_orig="$file"
 											file_path="$file"
 										fi
 
-										#for vb in "78: $num_path" "74: 00000000" "7c: 00000000"; do
+										
 
 										echo "78: $num_path" | /data/local/binary/xxd -r - "$file_path"
 
-										#done
+										
 
 										if [ $(echo $?) -eq 0 ]; then
 											file="$file_path"
 											true_vb
 
-											#if [ "$tru" == 3 -a "$rolbak" == 0 ]; then
+										
 											if [ -z "$real_nd" ]; then
 												echo
 												echo ".....Успешно пропатчен /"$nd"/"$file_orig" -> /"$nd"/"$file_path""
@@ -4558,11 +4412,6 @@ main_menu() {
 											echo
 										#fi
 										fi
-										#else
-										#echo
-										#$echo ".....Файл /"$nd"/"$file" уже пропатчен!"
-										#echo
-										#fi
 									}
 									vbmeta() {
 										echo
@@ -4742,9 +4591,6 @@ main_menu() {
 															echo "    $gg"
 															echo "$t"
 															echo "    $gg"
-															#echo "     ------------------------------"
-															#echo "     Файл: /"$nd"/"$file""
-															#echo "     ------------------------------"
 															echo
 															f_avb=/data/local/binary/avb.txt
 															avbtool info_image --image "$file" &>"$f_avb"
