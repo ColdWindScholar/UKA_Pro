@@ -9,7 +9,6 @@ from core.interfaces import IBaseExtractService
 from core.utils import ExitCode
 from core.actions import EnumAction, ExtensionsAction
 from core.models import CpuSupportEnum
-from dependency_injector.wiring import inject, Provide
 from containers import ApplicationContainer
 
 __author__ = 'MiuiPro.info DEV Team'
@@ -52,8 +51,7 @@ def set_debug_mode(handlers: dict[Any, Any]) -> dict[Any, Any]:
     return handlers
 
 
-@inject
-def main(service: IBaseExtractService = Provide[ApplicationContainer.extract_service], **kwargs) -> None:
+def main(service: IBaseExtractService = ApplicationContainer.extract_service, **kwargs) -> None:
     service.extract(**kwargs)
 
 
@@ -74,7 +72,7 @@ def create_parser() -> argparse.ArgumentParser:
         "-c",
         "--cpu",
         required=True,
-        help=f"choices, { (choices := tuple(v.value for k, v in CpuSupportEnum.__members__.items()))}",
+        help=f"choices, {(choices := tuple(v.value for k, v in CpuSupportEnum.__members__.items()))}",
         dest="cpu",
         type=CpuSupportEnum,
         choices=choices,
@@ -135,4 +133,3 @@ if __name__ == '__main__':
     else:
         parser.print_usage()
         sys.exit(ExitCode.USAGE)
-
