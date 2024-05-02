@@ -5,8 +5,8 @@ dir_loop="/data/local/$a"
 
 if [ -z "$("$dir_bb"/busybox mount | busybox cut -d" " -f3 | busybox grep "$dir_loop$")" ] ; then
 
- mkdir "$dir_loop" 2> /dev/null
- "$dir_bb"/busybox mount -t ext4 -o rw,loop "$file" "$dir_loop" 2> /dev/null
+ mkdir "$dir_loop"
+ "$dir_bb"/busybox mount -t ext4 -o rw,loop "$file" "$dir_loop"
 if [ "$?" -eq "0" ]; then
 echo
 echo "     $file смонтирован в папку: $dir_loop"
