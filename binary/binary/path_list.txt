@@ -1,3 +1,0 @@
-/sdcard
-/sdcard/Download
-/data/local/UnpackerSuper
