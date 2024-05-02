@@ -36,12 +36,12 @@ zst=$(busybox hexdump -C -n 2000 "$file" | busybox grep -o "28 b5 2f fd")
 
  echo
  echo ".....Удаление старой папки /data/local/UnpackerSystem/erofs/"$r_name""
- umount erofs/"$r_name" 2> /dev/null
- busybox rm -rf erofs/"$r_name" 2> /dev/null
+ umount erofs/"$r_name"
+ busybox rm -rf erofs/"$r_name"
  fi
 
-mkdir -p erofs/"$r_name" 2> /dev/null
-erofsfuse "$file" erofs/"$r_name" &> /dev/null
+mkdir -p erofs/"$r_name"
+erofsfuse "$file" erofs/"$r_name"
 if [ $(echo $?) -eq 0 ]; then
 echo 
 echo ".....Распаковка $file..."
