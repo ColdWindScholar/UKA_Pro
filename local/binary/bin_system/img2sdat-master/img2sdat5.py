@@ -8,21 +8,17 @@
 
 from __future__ import print_function
 
-import sys, os, errno, tempfile
-import common, blockimgdiff, sparse_img
+import os
+import sys
+import tempfile
+
+import blockimgdiff
+import sparse_img
 
 __version__ = '1.6'
 
-if sys.hexversion < 0x02070000:
-    print >> sys.stderr, "Python 2.7 or newer is required."
-    try:
-        input = raw_input
-    except NameError:
-        pass
-    input('Press ENTER to exit...')
-    sys.exit(1)
-else:
-    print('img2sdat binary - version: %s\n' % __version__)
+
+print('img2sdat binary - version: %s\n' % __version__)
 
 try:
     INPUT_IMAGE = str(sys.argv[1])
@@ -32,12 +28,9 @@ except IndexError:
     print('    [outdir]: output directory (current directory by default)\n')
     print('    [version]: transfer list version number, will be asked by default - more info on xda thread)\n')
     print('Visit xda thread for more information.\n')
-    try:
-        input = raw_input
-    except NameError:
-        pass
     input('Press ENTER to exit...')
     sys.exit()
+
 
 def __AndroidVersion():
     global input
@@ -48,10 +41,7 @@ def __AndroidVersion():
 3. Android Marshmallow 6.0
 4. Android 7.x/8.x/9.x/10.x/11.x
 ''')
-        try:
-            input = raw_input
-        except NameError:
-            pass
+
         item = input('Choose system version: ')
         if item == '1':
             version = 1
@@ -69,20 +59,22 @@ def __AndroidVersion():
             return
     return version
 
+
 def main(argv):
     global input
-    if len(sys.argv) > 2 and len(sys.argv) < 4:
-        if sys.argv[len(sys.argv)-1].isdigit():
-            if int(sys.argv[len(sys.argv)-1]) < 5:
-                version = int(sys.argv[len(sys.argv)-1])
-                outdir = os.path.realpath(os.path.dirname(sys.argv[1])) + os.sep + os.path.basename(sys.argv[1]).rsplit('.',1)[0]
+    if 2 < len(sys.argv) < 4:
+        if sys.argv[len(sys.argv) - 1].isdigit():
+            if int(sys.argv[len(sys.argv) - 1]) < 5:
+                version = int(sys.argv[len(sys.argv) - 1])
+                outdir = os.path.realpath(os.path.dirname(sys.argv[1])) + os.sep + \
+                         os.path.basename(sys.argv[1]).rsplit('.', 1)[0]
             else:
-                outdir = sys.argv[len(sys.argv)-1] + os.sep + os.path.basename(sys.argv[1]).rsplit('.',1)[0]
-                if not os.path.exists(sys.argv[len(sys.argv)-1]):
-                    os.makedirs(sys.argv[len(sys.argv)-1])
+                outdir = sys.argv[len(sys.argv) - 1] + os.sep + os.path.basename(sys.argv[1]).rsplit('.', 1)[0]
+                if not os.path.exists(sys.argv[len(sys.argv) - 1]):
+                    os.makedirs(sys.argv[len(sys.argv) - 1])
                 version = __AndroidVersion()
         else:
-            outdir = sys.argv[len(sys.argv) - 1] + os.sep + os.path.basename(sys.argv[1]).rsplit('.',1)[0]
+            outdir = sys.argv[len(sys.argv) - 1] + os.sep + os.path.basename(sys.argv[1]).rsplit('.', 1)[0]
             if not os.path.exists(os.path.dirname(sys.argv[len(sys.argv) - 1])):
                 os.makedirs(sys.argv[len(sys.argv) - 1])
             version = __AndroidVersion()
@@ -90,20 +82,21 @@ def main(argv):
         if len(sys.argv) == 2:
             if sys.argv[len(sys.argv) - 1].isdigit():
                 if int(sys.argv[len(sys.argv) - 1]) < 5:
-                    version = int(sys.argv[len(sys.argv)-1])
-                    outdir = os.path.realpath(os.path.dirname(sys.argv[1])) + os.sep + os.path.basename(sys.argv[1]).rsplit('.',1)[0]
-            else:
-                    outdir = os.path.realpath(os.path.dirname(sys.argv[1])) + os.sep + os.path.basename(sys.argv[1]).rsplit('.',1)[0]
-                    version = __AndroidVersion()
-        else:
-                if int(sys.argv[len(sys.argv) - 1]) < 5:
                     version = int(sys.argv[len(sys.argv) - 1])
-                else:
-                    version = __AndroidVersion()
-                outdir = sys.argv[2] + os.sep + os.path.basename(sys.argv[1]).rsplit('.',1)[0]
-                if not os.path.exists(sys.argv[2]):
-                    os.makedirs(sys.argv[2])
-
+                    outdir = os.path.realpath(os.path.dirname(sys.argv[1])) + os.sep + \
+                             os.path.basename(sys.argv[1]).rsplit('.', 1)[0]
+            else:
+                outdir = os.path.realpath(os.path.dirname(sys.argv[1])) + os.sep + \
+                         os.path.basename(sys.argv[1]).rsplit('.', 1)[0]
+                version = __AndroidVersion()
+        else:
+            if int(sys.argv[len(sys.argv) - 1]) < 5:
+                version = int(sys.argv[len(sys.argv) - 1])
+            else:
+                version = __AndroidVersion()
+            outdir = sys.argv[2] + os.sep + os.path.basename(sys.argv[1]).rsplit('.', 1)[0]
+            if not os.path.exists(sys.argv[2]):
+                os.makedirs(sys.argv[2])
 
     # Get sparse image
     image = sparse_img.SparseImage(INPUT_IMAGE, tempfile.mkstemp()[1], '0')
