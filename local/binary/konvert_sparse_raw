@@ -17,8 +17,6 @@ size_output_raw() {
 	return
 }
 
-#r_name=$(echo $file | busybox sed 's!.*\/!!' | busybox awk -F"-|_|[+]|[.]|[{]|[(]" '{ print $1 }')
-
 r="$(busybox basename $file)"
 r_name=${r%.*}
 

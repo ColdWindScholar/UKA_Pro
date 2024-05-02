@@ -50,20 +50,7 @@ gg() {
 		fi
 	done <"$config"/"$r_name"_space.txt
 
-	#>"$config"/"$r_name"_space_contexts.txt
 
-	#busybox cat "$config"/"$r_name"_space.txt | while read b; do
-	#w="$(echo "$b" | busybox sed 's!\.!\\\\\.!g')"
-	#u="$(busybox grep "$w " "$config"/"$r_name"_file_contexts)"
-	#if [ ! -z "$u" ]; then
-	#v="$(busybox cat "$config"/"$r_name"_file_contexts | busybox grep -n "$w " | busybox awk -F":" '{ print $1 }')"
-	#busybox sed -i ${v}d "$config"/"$r_name"_file_contexts
-	#echo "$u" >> "$config"/"$r_name"_space_contexts.txt
-	#echo "$u" | busybox sed 's! !_!g' | busybox sed 's!_u:object! u:object!' >> "$config"/"$r_name"_file_contexts
-	#fi
-	#done
-
-	#busybox cat "$config"/"$r_name"_space_contexts.txt | busybox sed 's! !_!g' | busybox sed 's!_u:object! u:object!' >> "$config"/"$r_name"_file_contexts
 
 	busybox find "$r_name" -type d | busybox sed 's!$!_d!' >"$config"/"$r_name"_f.txt
 	busybox find "$r_name" -type f | busybox sed 's!$!_f!' >>"$config"/"$r_name"_f.txt
@@ -98,14 +85,10 @@ if [ -f "$file" ]; then
 	rm -f config/exception.log
 	if [ ! -z "$(getprop ro.product.cpu.abilist64)" ]; then
 		mkfs="mkfs.erofs"
-		extract.erofs64 -x -f -i "$file" 1>/dev/null
-	#fsck.erofs --force --extract="$r_name" "$file"
-
-	#extract.erofs64 -x --only-cfg -i "$file"
-
+		extract.erofs64 -x -f -i "$file"
 	else
 		mkfs="mkfs.erofs32"
-		extract.erofs -x -f -i "$file" 1>/dev/null
+		extract.erofs -x -f -i "$file"
 	fi
 
 	if [ $(echo $?) -eq "0" -a ! -s config/exception.log ]; then
@@ -113,40 +96,22 @@ if [ -f "$file" ]; then
 		busybox mv -f config/"$r_name"_file_contexts config/"$r_name"/"$r_name"_file_contexts
 		busybox mv -f config/"$r_name"_fs_config config/"$r_name"/"$r_name"_fs_config
 		busybox mv -f config/"$r_name"_fs_options config/"$r_name"/"$r_name"_fs_options
-
 		echo "$f_name" >/data/local/UnpackerSystem/erofs/"$config"/"$r_name"_name.txt
-
 		busybox expr $(busybox du -s "$r_name" | busybox awk '{ print $1 }') \* 1024 >"$config"/"$r_name"_size.txt
-
 		size_basic="$(busybox cat "$config"/"$r_name"_size.txt)"
-
 		echo make_ext4fs -J -T -1 -S ./file_contexts -C ./fs_config -l "$size_basic" -a /"$r_name" '$outdir'/"$r_name".new.img $r_name >"$config"/"$r_name"_pack.sh
-
 		echo make_ext4fs -s -J -T -1 -S ./file_contexts -C ./fs_config -l "$size_basic" -a /"$r_name" '$outdir'/"$r_name".new.img $r_name >"$config"/"$r_name"_pack_sparse.sh
-
-		#a="--fs-config-file=./"$config"/"$r_name"_fs_config"
-		#b="--file-contexts=./"$config"/"$r_name"_file_contexts"
-		#c='$outdir'/"$r_name".new.img
-		#busybox cat "$config"/"$r_name"_fs_options | busybox grep "mkfs.erofs" | busybox awk -F "options:       " '{ print "mkfs.erofs"$2 }' | busybox awk -v a="$a" -v b="$b" -v c="$c" '{ print $1" "$2" "$3" "$4" "$5" "$6" "$7" "a" "b" "c" "$11}' > "$config"/"$r_name"_pack_erofs.sh
-
-		#busybox cat "$config"/"$r_name"_fs_options | busybox grep "mkfs.erofs" | busybox awk -F "options:" '{ print "mkfs.erofs"$2 }' | busybox awk -v a="--fs-config-file=./"$config"/"$r_name"_fs_config" -v b="--file-contexts=./"$config"/"$r_name"_file_contexts" -v c='$outdir'/"$r_name".new.img '{ print $1" "$2" -E^xattr-name-filter "$3$4" "$5$6" "$7" --product-out=./ "a" "b" "c" "$11}' > "$config"/"$r_name"_pack_erofs.sh
-
 		line_pack="$(busybox cat "$config"/"$r_name"_fs_options | busybox grep "mkfs.erofs")"
-
 		z="$(echo "$line_pack" | busybox awk '{ print $3 }')"
 		t="$(echo "$line_pack" | busybox awk '{ print $5 }')"
 		u="$(echo "$line_pack" | busybox awk '{ print $7 }')"
-
 		echo "$mkfs" "$z" -E^xattr-name-filter -T"$t" -U"$u" --mount-point=/"$r_name" --product-out=./ --fs-config-file=./"$config"/"$r_name"_fs_config --file-contexts=./"$config"/"$r_name"_file_contexts '$outdir'/"$r_name".new.img ./"$r_name" >"$config"/"$r_name"_pack_erofs.sh
-
 		busybox cat "$config"/"$r_name"_fs_options | busybox awk '/Filesystem UUID:/ { print $3 }' >"$config"/"$r_name"_uuid.txt
-
 		if [ -d ./"$r_name" -a -s "$config"/"$r_name"_fs_config ]; then
 			busybox sed -i '/logd / s!0x4000040000040!0x440000040!' "$config"/"$r_name"_fs_config
 			busybox find "$r_name" -type d | busybox sed 's!$!_d!' >"$config"/"$r_name"_f.txt
 			busybox find "$r_name" -type f | busybox sed 's!$!_f!' >>"$config"/"$r_name"_f.txt
 			busybox find "$r_name" -type l | busybox sed 's!$!_l!' >>"$config"/"$r_name"_f.txt
-
 			busybox find "$r_name" -type d -exec busybox stat -c '%N %u %g %a' {} \; | busybox sed 's!$! _d!' >"$config"/"$r_name"_avto_f.txt
 			busybox find "$r_name" -type f -exec busybox stat -c '%N %u %g %a' {} \; | busybox sed 's!$! _f!' >>"$config"/"$r_name"_avto_f.txt
 			busybox find "$r_name" -type l -exec busybox stat -c '%N %u %g %a' {} \; | busybox sed 's!$! _l!' | busybox sed -e s!\'!!g >>"$config"/"$r_name"_avto_f.txt
@@ -242,9 +207,6 @@ if [ -f "$file" ]; then
 		str_avb() {
 			base_dir=/data/local/UnpackerSystem/erofs
 			img_name=$(cat /data/local/UnpackerSystem/erofs/"$config"/"$r_name"_name.txt)
-
-			#busybox awk '!($0 in a) {a[$0];print}' "$base_dir"/"$config"/"$r_name"_file_contexts > "$base_dir"/"$config"/"$r_name"_file_contexts.tmp && busybox mv -f "$base_dir"/"$config"/"$r_name"_file_contexts.tmp "$base_dir"/"$config"/"$r_name"_file_contexts
-
 			busybox cat "$base_dir"/"$config"/"$r_name"_f.txt | busybox grep "_d$" | busybox sed 's!_d$!!' | while read x; do
 				x="$(echo "$x" | busybox sed 's!\.!\\\\.!g')"
 				busybox cat "$base_dir"/"$config"/"$r_name"_file_contexts | busybox grep "^/$x " | busybox grep -v "/ " | busybox awk '{ print $1"(/.*)?"" "$2 }2'
@@ -335,7 +297,6 @@ if [ -f "$file" ]; then
 				busybox find "$r_name" -type l | busybox xargs busybox tar -cf "$config"/"$r_name"_sim.tar 2>/dev/null
 				echo
 				echo "...Исправлено, сохранено в "$config"/"$r_name"_space.txt"
-				#echo "...Исправлено, сохранено в "$config"/"$r_name"_space_contexts.txt"
 				echo
 			else
 				echo

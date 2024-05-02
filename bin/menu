@@ -189,7 +189,7 @@ nn() {
 	elif [ -d "$h" -o -d /"$h" -a ! -z "$h" ]; then
 		outdir=/"$(echo "$h" | busybox sed 's!^/!!')"
 		set -- $outdir
-		make_ext4fs -l 10485760 "$outdir"/testuka >/dev/null
+		make_ext4fs -l 10485760 "$outdir"/testuka
 		if busybox test -s "$outdir"/testuka; then
 
 			clear
@@ -198,7 +198,7 @@ nn() {
 			set -- $outdir
 			echo "    $outdir"
 			inf_space_menu
-			busybox rm -f "$outdir"/testuka 2>/dev/null
+			busybox rm -f "$outdir"/testuka
 		else
 			clear
 			echo
@@ -207,10 +207,10 @@ nn() {
 			echo "    Установлена папка сохранения выходного образа:"
 			outdir=/data/local/UnpackerSystem
 			set -- $outdir
-			mkdir "$outdir" 2>/dev/null
+			mkdir "$outdir"
 			echo "    $outdir"
 			inf_space_menu
-			busybox rm -f "$outdir"/testuka 2>/dev/null
+			busybox rm -f "$outdir"/testuka
 		fi
 	else
 		clear
@@ -220,7 +220,7 @@ nn() {
 		echo "    Установлена папка сохранения выходного образа:"
 		outdir=/data/local/UnpackerSystem
 		set -- $outdir
-		mkdir "$outdir" 2>/dev/null
+		mkdir "$outdir"
 		echo "    $outdir"
 		inf_space_menu
 		return
@@ -248,7 +248,7 @@ nnnnn() {
 	elif [ -d "$h" -o -d /"$h" ]; then
 		outdir=/"$(echo "$h" | busybox sed 's!^/!!')"
 		set -- $outdir
-		make_ext4fs -l 10485760 "$outdir"/testuka >/dev/null
+		make_ext4fs -l 10485760 "$outdir"/testuka
 		if busybox test -s "$outdir"/testuka; then
 
 			clear
@@ -256,7 +256,7 @@ nnnnn() {
 			echo "     Установлена папка сохранения выходного образа:"
 			set -- $outdir
 			echo "     $outdir"
-			busybox rm -f "$outdir"/testuka 2>/dev/null
+			busybox rm -f "$outdir"/testuka
 		else
 			clear
 			echo
@@ -266,7 +266,7 @@ nnnnn() {
 			outdir=/data/local/UnpackerSystem
 			set -- $outdir
 			echo "    $outdir"
-			busybox rm -f "$outdir"/testuka 2>/dev/null
+			busybox rm -f "$outdir"/testuka
 		fi
 	else
 		outdir="$h"
@@ -5574,7 +5574,7 @@ main_menu() {
 												echo
 												echo ".....Очистка /data/local/UnpackerPayload..."
 												#echo
-												busybox find /data/local/UnpackerPayload/* -maxdepth 1 ! -name "*.bin" -type f -exec busybox rm -f {} \; 2>/dev/null
+												busybox find /data/local/UnpackerPayload/* -maxdepth 1 ! -name "*.bin" -type f -exec busybox rm -f {} \;
 												echo
 												echo ".....Извлечение из /$nd/$file..."
 												echo
@@ -5600,7 +5600,7 @@ main_menu() {
 													echo ".....Извлечение из /$nd/$file..."
 													echo
 
-													busybox find /data/local/UnpackerPayload/* -maxdepth 1 ! -name "*.bin" -type f -exec busybox rm -f {} \; 2>/dev/null
+													busybox find /data/local/UnpackerPayload/* -maxdepth 1 ! -name "*.bin" -type f -exec busybox rm -f {} \;
 													payload-dumper -c 8 -o /data/local/UnpackerPayload "$file"
 													if [ $(echo $?) -eq 0 ]; then
 														clear
@@ -6028,7 +6028,7 @@ main_menu() {
 													echo ".....Извлечение из /$nd/$file..."
 													echo
 													if [ ! -z "$(busybox hexdump -C -n 20 /"$nd"/"$file" | busybox grep -o "52 4b 46 57 66")" ]; then
-														busybox mkdir "$rok_dir"/"$name_rok" 2>/dev/null
+														busybox mkdir "$rok_dir"/"$name_rok"
 														echo "rkfwf" >"$rok_dir"/"$name_rok"/conf
 
 														busybox dd if="$file" of="$rok_dir"/"$name_rok"/tmpt bs=3000000 count=1 &>/dev/null
@@ -6057,7 +6057,7 @@ main_menu() {
 														fi
 
 													elif [ ! -z "$(busybox hexdump -C -n 20 /"$nd"/"$file" | busybox grep -o "52 4b 41 46")" ]; then
-														busybox mkdir "$rok_dir"/"$name_rok" 2>/dev/null
+														busybox mkdir "$rok_dir"/"$name_rok"
 														echo "rkaf" >"$rok_dir"/"$name_rok"/conf
 
 														busybox cp -f /"$nd"/"$file" "$rok_dir"/"$name_rok"/update.img
@@ -6106,7 +6106,7 @@ main_menu() {
 													echo
 													echo ".....Извлечение из /$nd/$file..."
 													echo
-													busybox mkdir "$rok_dir"/"$name_rok" 2>/dev/null
+													busybox mkdir "$rok_dir"/"$name_rok"
 													aml_image_v2_packer -d /"$nd"/"$file" "$rok_dir"/"$name_rok"
 													if [ $(echo $?) -eq 0 ]; then
 														echo
@@ -6419,7 +6419,7 @@ main_menu() {
 							m_name="$(busybox basename "$file" | busybox sed -e 's!.ofp$!!; s!.ops$!!')"
 
 							cd /data/local/UnpackerSystem
-							mkdir "$m_name" 2>/dev/null
+							mkdir "$m_name"
 							>super_simg
 							echo
 							echo ".....Извлечение образов из "$file""
@@ -6934,11 +6934,11 @@ main_menu() {
 							echo
 							echo ".....Удаление AIK-mobile..."
 							/data/local/AIK-mobile/cleanup.sh
-							/data/local/AIK-mobile/bin/aik --uninstall 2>/dev/null
-							busybox mount -o rw,remount / 2>/dev/null
-							busybox mount -o rw,remount /system 2>/dev/null
-							busybox find $(echo $PATH | busybox sed 's!:! !g') -name 'aik' -type f -o -iname 'aik-mobile' -type d | busybox xargs busybox rm -rf 2>/dev/null
-							busybox rm -rf /data/local/AIK-mobile /data/adb/modules/aik-mobile 2>/dev/null
+							/data/local/AIK-mobile/bin/aik --uninstall
+							busybox mount -o rw,remount /
+							busybox mount -o rw,remount /system
+							busybox find $(echo $PATH | busybox sed 's!:! !g') -name 'aik' -type f -o -iname 'aik-mobile' -type d | busybox xargs busybox rm -rf
+							busybox rm -rf /data/local/AIK-mobile /data/adb/modules/aik-mobile
 							echo
 							echo ".....AIK-mobile удалён!"
 							echo
@@ -6952,11 +6952,11 @@ main_menu() {
 
 						#else
 						elif busybox test -f /data/local/binary/UninstallerUnpack.zip -a ! -f "$delit_uka"; then
-							busybox mkdir /cache/recovery 2>/dev/null
-							busybox chmod 755 /cache/recovery 2>/dev/null
+							busybox mkdir /cache/recovery
+							busybox chmod 755 /cache/recovery
 							busybox cp -f /data/local/binary/UninstallerUnpack.zip /cache/recovery/UninstallerUnpack.zip
 							echo "install /cache/recovery/UninstallerUnpack.zip" >/cache/recovery/openrecoveryscript
-							busybox chmod 755 /cache/recovery/openrecoveryscript 2>/dev/null
+							busybox chmod 755 /cache/recovery/openrecoveryscript
 
 							reb
 							reboot recovery
