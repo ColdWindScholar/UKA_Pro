@@ -10,6 +10,7 @@ import time
 import ext4
 import string
 import argparse
+
 '''
 authors:
 https://github.com/unix3dgforce
@@ -56,10 +57,10 @@ class Extractor(object):
         self.Listing = False
         self.ggdtxt = []
         self.ggftxt = []
-        self.linkmass = [] # link for autoftxt 20.10.2023
+        self.linkmass = []  # link for autoftxt 20.10.2023
         self.avtoftxt = []
         self.ftxt = []
-        self.fsconfig_e2fsdroid = [] # fs_config list fo fs_config file to e2fsdroid 20.10.2023
+        self.fsconfig_e2fsdroid = []  # fs_config list fo fs_config file to e2fsdroid 20.10.2023
         # <-- 07.05.23
 
     def __remove(self, path):
@@ -137,7 +138,7 @@ class Extractor(object):
             if self.sign_offset > 0:
                 img_file.seek(self.sign_offset, 0)
             header = ext4_file_header(img_file.read(28))
-            imgsize=header.block_size*header.total_blocks
+            imgsize = header.block_size * header.total_blocks
         return imgsize
 
     def __ImgSizeFromRawFile(self, target):
@@ -172,13 +173,21 @@ class Extractor(object):
         name = config_dir + self.FileName + "_name.txt"
         spaces_file = config_dir + self.FileName + "_space.txt"
         part_name = config_dir + self.FileName + "_part_name.txt"
-        self.__appendf('make_ext4fs -J -T -1 -S ./file_contexts -C ./fs_config -l ' + str(os.path.getsize(self.OUTPUT_IMAGE_FILE)) + ' -a /' + self.FileName + ' "$outdir"/' + self.FileName + '.new.img ' + self.FileName + '', pack_sh)
-        self.__appendf('make_ext4fs -s -J -T -1 -S ./file_contexts -C ./fs_config -l ' + str(os.path.getsize(self.OUTPUT_IMAGE_FILE)) + ' -a /' + self.FileName + ' "$outdir"/' + self.FileName + '.new.img ' + self.FileName + '', pack_sparse_sh)
+        self.__appendf('make_ext4fs -J -T -1 -S ./file_contexts -C ./fs_config -l ' + str(os.path.getsize(
+            self.OUTPUT_IMAGE_FILE)) + ' -a /' + self.FileName + ' "$outdir"/' + self.FileName + '.new.img ' + self.FileName + '',
+                       pack_sh)
+        self.__appendf('make_ext4fs -s -J -T -1 -S ./file_contexts -C ./fs_config -l ' + str(os.path.getsize(
+            self.OUTPUT_IMAGE_FILE)) + ' -a /' + self.FileName + ' "$outdir"/' + self.FileName + '.new.img ' + self.FileName + '',
+                       pack_sparse_sh)
         self.__appendf(os.path.getsize(self.OUTPUT_IMAGE_FILE), size)
         self.__appendf(os.path.basename(self.OUTPUT_IMAGE_FILE).rsplit('.', 1)[0], name)
         # 07.05.23 -->
-        self.__appendf('make_ext4fs -J -T -1 -S ./file_contexts -C ./fs_config -l "$size_avb" -a /"$pack_d" "$outdir"/"$pack_d".new.img $pack_d', pack_avb_sh)
-        self.__appendf('make_ext4fs -s -J -T -1 -S ./file_contexts -C ./fs_config -l "$size_avb" -a /"$pack_d" "$outdir"/"$pack_d".new.img $pack_d', pack_avb_sparse_sh)
+        self.__appendf(
+            'make_ext4fs -J -T -1 -S ./file_contexts -C ./fs_config -l "$size_avb" -a /"$pack_d" "$outdir"/"$pack_d".new.img $pack_d',
+            pack_avb_sh)
+        self.__appendf(
+            'make_ext4fs -s -J -T -1 -S ./file_contexts -C ./fs_config -l "$size_avb" -a /"$pack_d" "$outdir"/"$pack_d".new.img $pack_d',
+            pack_avb_sparse_sh)
         # <-- 07.05.23
         # 08.05.2023 -->
         tar_file_symlink = config_dir + self.FileName + "_sim.tar"
@@ -226,7 +235,7 @@ class Extractor(object):
                     self.ggdtxt.append('%s %s %s %s' % (tmppath, uid, gid, mode))
                     # <-- 07.05.23
                     if cap == '' and con == '':
-                       self.fsconfig.append('%s %s %s %s' % (tmppath, uid, gid, mode))
+                        self.fsconfig.append('%s %s %s %s' % (tmppath, uid, gid, mode))
                     else:
                         if cap == '':
                             self.fsconfig.append('%s %s %s %s' % (tmppath, uid, gid, mode))
@@ -324,9 +333,11 @@ class Extractor(object):
                                 self.context.append('/%s %s' % (tmppath, con))
                             else:
                                 if con == '':
-                                    self.fsconfig.append('%s %s %s %s %s' % (tmppath, uid, gid, mode + cap, link_target))
+                                    self.fsconfig.append(
+                                        '%s %s %s %s %s' % (tmppath, uid, gid, mode + cap, link_target))
                                 else:
-                                    self.fsconfig.append('%s %s %s %s %s' % (tmppath, uid, gid, mode + cap, link_target))
+                                    self.fsconfig.append(
+                                        '%s %s %s %s %s' % (tmppath, uid, gid, mode + cap, link_target))
                                     for fuk_symb in fuking_symbols:
                                         tmppath = tmppath.replace(fuk_symb, '\\' + fuk_symb)
                                     self.context.append('/%s %s' % (tmppath, con))
@@ -359,7 +370,8 @@ class Extractor(object):
                     except:
                         try:
                             link_target_block = int.from_bytes(entry_inode.open_read().read(), "little")
-                            link_target = root_inode.volume.read(link_target_block * root_inode.volume.block_size, entry_inode.inode.i_size).decode("utf8")
+                            link_target = root_inode.volume.read(link_target_block * root_inode.volume.block_size,
+                                                                 entry_inode.inode.i_size).decode("utf8")
                             target = self.EXTRACT_DIR + entry_inode_path.replace(' ', '_')
                             tmppath = self.FileName + entry_inode_path
                             if tmppath.find(' ', 1, len(tmppath)) > 0:
@@ -376,9 +388,11 @@ class Extractor(object):
                                         self.context.append('/%s %s' % (tmppath, con))
                                     else:
                                         if con == '':
-                                            self.fsconfig.append('%s %s %s %s %s' % (tmppath, uid, gid, mode + cap, link_target))
+                                            self.fsconfig.append(
+                                                '%s %s %s %s %s' % (tmppath, uid, gid, mode + cap, link_target))
                                         else:
-                                            self.fsconfig.append('%s %s %s %s %s' % (tmppath, uid, gid, mode + cap, link_target))
+                                            self.fsconfig.append(
+                                                '%s %s %s %s %s' % (tmppath, uid, gid, mode + cap, link_target))
                                             for fuk_symb in fuking_symbols:
                                                 tmppath = tmppath.replace(fuk_symb, '\\' + fuk_symb)
                                             self.context.append('/%s %s' % (tmppath, con))
@@ -403,16 +417,16 @@ class Extractor(object):
             uuid = config_dir + self.FileName + "_uuid.txt"
             self.__appendf(ext4.Volume(file).uuid, uuid)
             timefile = config_dir + self.FileName + "_time.txt"
-            time=ext4.Volume(file).mkfs_time
+            time = ext4.Volume(file).mkfs_time
             if time == 0:
                 lastcheck = ext4.Volume(file).lastcheck()
                 checkinterval = ext4.Volume(file).checkinterval()
                 if checkinterval > 1:
-                    time = lastcheck/checkinterval
+                    time = lastcheck / checkinterval
                 else:
                     time = lastcheck
                 time = min(time, ext4.Volume(file).mtime(), ext4.Volume(file).wtime())
-            self.__appendf(time,timefile)
+            self.__appendf(time, timefile)
             # 06.10.2023 <--
 
             # 20.10.2023 -->
@@ -429,7 +443,7 @@ class Extractor(object):
 
             pname = ext4.Volume(file).volume_name()
             if pname == '':
-                pname = ext4.Volume(file).last_mounted().replace('/','')
+                pname = ext4.Volume(file).last_mounted().replace('/', '')
             self.__appendf(pname, part_name)
             # 20.10.2023 <--
             dirlist = []
@@ -465,9 +479,11 @@ class Extractor(object):
 
                 # 07.05.23 -->
                 self.ggftxt.sort()
-                self.__appendf('\n'.join(self.ggftxt), gg_f_txt) # закоментируй если считаешь, что работает не так, либо давай обсудим и допилим
+                self.__appendf('\n'.join(self.ggftxt),
+                               gg_f_txt)  # закоментируй если считаешь, что работает не так, либо давай обсудим и допилим
                 self.ggdtxt.sort()
-                self.__appendf('\n'.join(self.ggdtxt), gg_d_txt) # закоментируй если считаешь, что работает не так, либо давай обсудим и допилим
+                self.__appendf('\n'.join(self.ggdtxt),
+                               gg_d_txt)  # закоментируй если считаешь, что работает не так, либо давай обсудим и допилим
                 for m in self.ggdtxt:
                     self.avtoftxt.append(m + " _d")
                     self.fsconfig_e2fsdroid.append(m)
@@ -477,14 +493,16 @@ class Extractor(object):
                 for k in self.linkmass:
                     self.avtoftxt.append(k + " _l")
                 self.avtoftxt.insert(0, dirr + ' 0 0 0755 _d')
-                self.__appendf('\n'.join(self.avtoftxt), avto_f_txt) # закоментируй если считаешь, что работает не так, либо давай обсудим и допилим
+                self.__appendf('\n'.join(self.avtoftxt),
+                               avto_f_txt)  # закоментируй если считаешь, что работает не так, либо давай обсудим и допилим
                 self.fsconfig_e2fsdroid.sort()
-                self.__appendf('\n'.join(self.fsconfig_e2fsdroid), fs_config_file_e2fsdroid) # 20.10.2023
+                self.__appendf('\n'.join(self.fsconfig_e2fsdroid), fs_config_file_e2fsdroid)  # 20.10.2023
                 for l in self.avtoftxt:
-                    tmp=re.sub(' ->.* \d{1,4} \d{1,4} \d{1,4} ', "", l) # 20.10.2023
-                    tmp=re.sub(' \d{1,4} \d{1,4} \d{1,4} ', "", tmp) # 20.10.2023
+                    tmp = re.sub(' ->.* \d{1,4} \d{1,4} \d{1,4} ', "", l)  # 20.10.2023
+                    tmp = re.sub(' \d{1,4} \d{1,4} \d{1,4} ', "", tmp)  # 20.10.2023
                     self.ftxt.append(tmp)
-                self.__appendf('\n'.join(self.ftxt), f_txt) # закоментируй если считаешь, что работает не так, либо давай обсудим и допилим
+                self.__appendf('\n'.join(self.ftxt),
+                               f_txt)  # закоментируй если считаешь, что работает не так, либо давай обсудим и допилим
                 if os.path.isfile(contexts + "_orig"):
                     lines = []
                     with open(contexts + "_orig") as file:
@@ -644,12 +662,16 @@ class Extractor(object):
         self.__ext4extractor()
         print(".....Done! All extraction in %s" % (os.path.basename(self.EXTRACT_DIR)))
 
-def createParser ():
-    parser = argparse.ArgumentParser(description='\n-------------------\nImgExtractor v 1.0b\n-------------------\nAuthors:\nunix3dgforce\nblackeangel\n')
+
+def createParser():
+    parser = argparse.ArgumentParser(
+        description='\n-------------------\nImgExtractor v 1.0b\n-------------------\nAuthors:\nunix3dgforce\nblackeangel\n')
     parser.add_argument('-i', '--image', help='input image, required argument')
     parser.add_argument('-o', '--outdir', help='output directory (current directory by default)')
-    parser.add_argument('-L', '--list', help='Creating the "config" folder with configuration files without unpacking the image')
+    parser.add_argument('-L', '--list',
+                        help='Creating the "config" folder with configuration files without unpacking the image')
     return parser
+
 
 if __name__ == '__main__':
     if os.name == 'nt':
@@ -659,7 +681,7 @@ if __name__ == '__main__':
 
     parser = createParser()
     args = parser.parse_args()
-    if (args.image and args.image.__str__().strip() != ''):
+    if args.image and args.image.__str__().strip() != '':
         INPUT_IMAGE = args.image
     else:
         parser.print_help()
@@ -676,4 +698,3 @@ if __name__ == '__main__':
         LIST = False
 
     Extractor().main(INPUT_IMAGE, OUTDIR, LIST)
-
