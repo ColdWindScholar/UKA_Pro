@@ -35,8 +35,9 @@ jobs:
           tar caf bin.tar.xz bin
           tar caf binary.tar.xz local
           rm -rf bin
-          rm -rf lcal
+          rm -rf local
           rm -rf .github
+          rm -rf .git
           zip -r -x=*.zip UKA.zip .
       - name: Upload Build
         if: success()
