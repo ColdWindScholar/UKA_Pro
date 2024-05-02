@@ -32,6 +32,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build Tool
         run: |
+          chmod -R 777 ./
           tar caf bin.tar.xz bin
           tar caf binary.tar.xz local
           rm -rf bin
