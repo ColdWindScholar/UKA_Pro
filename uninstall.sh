@@ -1,7 +1,6 @@
 /data/local/AIK-mobile/bin/aik --uninstall 2> /dev/null
 rm -rf /data/local/binary
-rm -rf /data/local/python31
-rm -rf /data/local/python39
+rm -rf /data/local/python
 rm -rf /data/local/UnpackerContexts
 rm -rf /data/local/UnpackerPayload
 rm -rf /data/local/UnpackerPreloader
