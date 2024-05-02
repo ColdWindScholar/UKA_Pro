@@ -1,31 +1,27 @@
 #!/system/bin/sh
 
- #dat_name=$(echo $file | busybox sed 's!.*\/!!' | busybox awk -F"-|_|[+]|[.]|[{]|[(]" '{ print $1 }')
- 
+#dat_name=$(echo $file | busybox sed 's!.*\/!!' | busybox awk -F"-|_|[+]|[.]|[{]|[(]" '{ print $1 }')
 
- 
-  #r="$(busybox basename $file)"
-  #dat_name=${r%.*}
+#r="$(busybox basename $file)"
+#dat_name=${r%.*}
 
-  dat_name=$(echo $file | busybox sed 's!.*\/!!' | busybox awk -F".new.dat" '{ print $1 }')
+dat_name=$(echo $file | busybox sed 's!.*\/!!' | busybox awk -F".new.dat" '{ print $1 }')
 
-
-
- if busybox test -s ./"$dat_name".transfer.list; then
- echo
- echo ".....Конвертация $file..."
- echo
- python31 /data/local/binary/sdat2img.py "$dat_name".transfer.list "$dat_name".new.dat /"$ndd"/"$dat_name".img
- if [ $(echo $?) -eq 0 ]; then
- file=/"$ndd"/"$dat_name".img
- nd="$ndd"
- . /data/local/binary/unpack_img
- else
- echo
- echo ".....Ошибка при конвеpтации $file"
- echo
- fi
- else
- echo
- echo ".....В папке нет файла "$dat_name".transfer.list."
-  fi
+if busybox test -s ./"$dat_name".transfer.list; then
+	echo
+	echo ".....Конвертация $file..."
+	echo
+	python31 /data/local/binary/sdat2img.py "$dat_name".transfer.list "$dat_name".new.dat /"$ndd"/"$dat_name".img
+	if [ $(echo $?) -eq 0 ]; then
+		file=/"$ndd"/"$dat_name".img
+		nd="$ndd"
+		. /data/local/binary/unpack_img
+	else
+		echo
+		echo ".....Ошибка при конвеpтации $file"
+		echo
+	fi
+else
+	echo
+	echo ".....В папке нет файла "$dat_name".transfer.list."
+fi
