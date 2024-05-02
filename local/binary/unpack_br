@@ -16,7 +16,7 @@
  echo
  echo ".....Конвертация "$br_name".new.dat..."
  echo
- sdat2img "$br_name".transfer.list "$br_name".new.dat "$br_name".img
+ python31 /data/local/binary/sdat2img.py "$br_name".transfer.list "$br_name".new.dat "$br_name".img
  if [ $(echo $?) -eq 0 ]; then
  echo
  echo ".....Удаление "$br_name".new.dat..."
