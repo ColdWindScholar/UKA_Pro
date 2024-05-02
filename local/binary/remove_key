@@ -11,13 +11,10 @@ if busybox test -s "$file"; then
 
 if busybox test "$check_alg" != "NONE" -a ! -z "$check_alg"; then
 
- #f_name="$(echo "$file" | busybox awk -F"." '{ print $1 }')"
  r="$(busybox basename $file)"
 
  f_name=${r%.*}
- 
- #offset_avb="$(printf "%d\n" "$(bin_utils foffset "$file" "41564230" -1)")"
- 
+
  offset_avb="$(bin_utils foffset "$file" "41564230" -1 true)"
 
 if busybox test ! -z "$offset_avb"; then

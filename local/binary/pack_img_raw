@@ -72,9 +72,6 @@ if busybox test -s "$dir_avb"/"$pack_d"_avb.img; then
 			gen_avb_key
 			;;
 		esac
-	#else
-	#sign_print=""
-	#sign_file=""
 	fi
 	part_name_tmp="$(busybox cat "$dir_avb"/"$pack_d"_part_name.txt)"
 	if busybox test ! -z "$part_name_tmp"; then
@@ -89,7 +86,6 @@ if busybox test -s "$dir_avb"/"$pack_d"*_size_avb.txt; then
 	ofsize="$(busybox expr "$offset" / 4096)"
 fi
 
-#cd /data/local/UnpackerSystem
 sed -i '/^$/d' "$config"/"$pack_d"_fs_config 2>/dev/null
 
 my_pack() {
@@ -101,22 +97,15 @@ my_pack() {
 		echo ".....Создание образа "$pack_d".new.img..."
 		echo
 		if [ "$size" = "111" ]; then
-
 			if busybox test -s ./"$config"/"$pack_d"*_avb.img; then
-
 				size_avb="$(avbtool add_hashtree_footer --partition_size "$r_size" --do_not_generate_fec --calc_max_image_size)"
-
 				chmod 755 ./"$config"/"$pack_d"_pack_avb.sh && . ./"$config"/"$pack_d"*_pack_avb.sh
 				if [ $(echo $?) -eq 0 ]; then
 					echo
 					echo ".....Создание структуры AVB..."
-
 					echo "avbtool add_hashtree_footer --image "$outdir"/"$pack_d".new.img --partition_size "$r_size" "$part_name" --do_not_generate_fec "$prop_avb" "$sign_print" "$sign_file"" >./"$config"/"$pack_d"_pack_avb_str.sh
-
 					chmod 755 ./"$config"/"$pack_d"_pack_avb_str.sh && . ./"$config"/"$pack_d"*_pack_avb_str.sh
-
 					if [ $(echo $?) -eq 0 ]; then
-
 						size_output_raw
 					#echo
 					else
@@ -133,9 +122,7 @@ my_pack() {
 			else
 				chmod 755 ./"$config"/"$pack_d"_gsize.sh && . ./"$config"/"$pack_d"_gsize.sh
 				if [ $(echo $?) -eq 0 ]; then
-
 					size_output_raw
-				#echo
 				else
 					echo
 					echo ".....error: Ошибка при сборке!"
@@ -158,7 +145,6 @@ my_pack() {
 					if [ $(echo $?) -eq 0 ]; then
 
 						size_output_raw
-					#echo
 					else
 						echo
 						echo ".....error: Ошибка при создании структуры AVB!"
@@ -168,7 +154,6 @@ my_pack() {
 					if [ $(echo $?) -eq 0 ]; then
 
 						size_output_raw
-					#echo
 					else
 						echo
 						echo ".....error: Ошибка при сборке!"
@@ -178,9 +163,7 @@ my_pack() {
 			else
 				chmod 755 ./"$config"/"$pack_d"*_pack.sh && . ./"$config"/"$pack_d"*_pack.sh
 				if [ $(echo $?) -eq 0 ]; then
-
 					size_output_raw
-				#echo
 				else
 					echo
 					echo ".....error: Ошибка при сборке!"
@@ -196,7 +179,6 @@ my_pack() {
 }
 
 if [ -d ./"$pack_d" -a -f ./"$config"/"$pack_d"*_pack.sh ]; then
-
 	if [ ! -f ./file_contexts ]; then
 		echo
 		echo ".....Не найден сторонний file_contexts,собираем с полученным при распаковке образа..."
@@ -216,15 +198,10 @@ if [ -d ./"$pack_d" -a -f ./"$config"/"$pack_d"*_pack.sh ]; then
 					if [ $(echo $?) -eq 0 ]; then
 						echo
 						echo ".....Создание структуры AVB..."
-
 						echo "avbtool add_hashtree_footer --image "$outdir"/"$pack_d".new.img --partition_size "$r_size" "$part_name" --do_not_generate_fec "$prop_avb" "$sign_print" "$sign_file"" >./"$config"/"$pack_d"_pack_avb_str.sh
-
 						chmod 755 ./"$config"/"$pack_d"_pack_avb_str.sh && . ./"$config"/"$pack_d"*_pack_avb_str.sh
-
 						if [ $(echo $?) -eq 0 ]; then
-
 							size_output_raw
-						#echo
 						else
 							echo
 							echo ".....error: Ошибка при создании структуры AVB!"
@@ -239,7 +216,6 @@ if [ -d ./"$pack_d" -a -f ./"$config"/"$pack_d"*_pack.sh ]; then
 				else
 					chmod 755 ./"$config"/"$pack_d"_gsize.sh && . ./"$config"/"$pack_d"_gsize.sh
 					if [ $(echo $?) -eq 0 ]; then
-
 						size_output_raw
 					#echo
 					else
@@ -262,9 +238,7 @@ if [ -d ./"$pack_d" -a -f ./"$config"/"$pack_d"*_pack.sh ]; then
 
 						chmod 755 ./"$config"/"$pack_d"_pack_avb_str.sh && . ./"$config"/"$pack_d"*_pack_avb_str.sh
 						if [ $(echo $?) -eq 0 ]; then
-
 							size_output_raw
-						#echo
 						else
 							echo
 							echo ".....error: Ошибка при создании структуры AVB!"
@@ -272,9 +246,7 @@ if [ -d ./"$pack_d" -a -f ./"$config"/"$pack_d"*_pack.sh ]; then
 						fi
 					else
 						if [ $(echo $?) -eq 0 ]; then
-
 							size_output_raw
-						#echo
 						else
 							echo
 							echo ".....error: Ошибка при сборке!"
@@ -307,5 +279,4 @@ else
 	echo ".....Нет папки \""$pack_d"\" для сборки образа, или файла *_pack.sh."
 	echo
 fi
-#unset erof
 busybox rm -f ./fs_config ./file_contexts

@@ -14,15 +14,12 @@ if busybox test -s "$file"; then
  echo ".....Заменяем ключ..."
  echo
 
- #f_name="$(echo "$file" | busybox awk -F"." '{ print $1 }')"
+
  r="$(busybox basename $file)"
 
  f_name=${r%.*}
 
- #offset_avb="$(python39 /data/local/binary/bin_system/find_avb0.py "$file" "41564230" | busybox head -1)"
- 
- #offset_avb="$(printf "%d\n" "$(bin_utils foffset "$file" "41564230" -1)")"
- 
+
  offset_avb="$(bin_utils foffset "$file" "41564230" -1 true)"
 
 if busybox test ! -z "$offset_avb"; then
@@ -202,9 +199,7 @@ if [ $(echo $?) -eq 0 ]; then
  echo ".....Поиск файлов..."
 
  v=$(for a in $(busybox find . -maxdepth 1 -name '*.img' -type f | busybox sed 's!./!!'); do
- #if [ ! -z "$(busybox hexdump -C -n 4500 "$a" 2> /dev/null | busybox grep -Eo '41 4e 44 52 4f 49 44 21|41 56 42 30 ')" ]; then
      echo "$a"
- #fi
      done)
 
  set -- $v

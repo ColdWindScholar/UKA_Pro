@@ -2,17 +2,9 @@
 
 size_output_raw() {
 	if busybox test -s "$outdir"/"$pack_d".new.img; then
-		#if busybox test -s "$dir_avb"/*_pubkey.pem; then
-		#. remove_key "$outdir"/"$pack_d".new.img "$dir_avb"/*_pubkey.pem
-		#busybox cp -f "$copy_sign_file" "$dir_avb"/"$pack_d"_pubkey_new.pem
-		#fi
 		echo
 		echo -e "\033[33;1m.....Успешно создан "$pack_d".new.img!\033[0m"
 		echo
-		#size_out="$(busybox stat -c %s "$outdir"/"$pack_d".new.img)"
-		#echo "$size_out" > "$config"/"$pack_d"_size_out.txt
-		#echo -e "\033[33;1m.....Размер raw == $size_out байт\033[0m"
-		#echo
 	fi
 	return
 }
@@ -49,7 +41,6 @@ fi
 unset check_alg
 unset sign_file
 unset sign_print
-#size_obraz="$(busybox cat "$dir_avb"/"$pack_d"_size.txt)"
 if busybox test -s "$dir_avb"/"$pack_d"_avb.img; then
 	prop_avb="$(busybox cat "$dir_avb"/"$pack_d"_avb.img | busybox awk '/    Prop:/ { print "--prop"" "$2":"$4 }' | tr '\n' ' ')"
 	check_alg="$(busybox cat "$dir_avb"/"$pack_d"_avb.img | busybox awk '/^Algorithm:/ { print $2 }')"
@@ -68,9 +59,6 @@ if busybox test -s "$dir_avb"/"$pack_d"_avb.img; then
 			gen_avb_key
 			;;
 		esac
-	#else
-	#sign_print=""
-	#sign_file=""
 	fi
 	part_name_tmp="$(busybox cat "$dir_avb"/"$pack_d"_part_name.txt)"
 	if busybox test ! -z "$part_name_tmp"; then
@@ -81,10 +69,6 @@ if busybox test -s "$dir_avb"/"$pack_d"_avb.img; then
 fi
 
 if [ -d ./"$pack_d" -a -f ./"$config"/"$pack_d"*_pack_erofs.sh ]; then
-
-	#echo
-	#cp ./"$config"/"$pack_d"*_fs_config ./fs_config
-	#cp ./"$config"/"$pack_d"*_file_contexts ./file_contexts
 	if [ -f ./"$config"/"$pack_d"*_fs_config -a -f ./"$config"/"$pack_d"*_file_contexts ]; then
 
 		echo
@@ -93,11 +77,9 @@ if [ -d ./"$pack_d" -a -f ./"$config"/"$pack_d"*_pack_erofs.sh ]; then
 		echo
 		chmod 755 ./"$config"/"$pack_d"_pack_erofs.sh && . ./"$config"/"$pack_d"*_pack_erofs.sh
 		if [ $(echo $?) -eq 0 ]; then
-			#size_out="$(busybox stat -c %s "$outdir"/"$pack_d".new.img)"
 			if [ "$sparse_erof" == "1" ]; then
 				echo
 				echo ".....Конвертация в sparse..."
-				#echo
 				img2simg "$outdir"/"$pack_d".new.img "$outdir"/"$pack_d".sparse.img
 				if [ $(echo $?) -eq 0 ]; then
 					busybox mv -f "$outdir"/"$pack_d".sparse.img "$outdir"/"$pack_d".new.img
@@ -110,13 +92,9 @@ if [ -d ./"$pack_d" -a -f ./"$config"/"$pack_d"*_pack_erofs.sh ]; then
 			if busybox test -s ./"$config"/"$pack_d"*_avb.img; then
 				echo
 				echo ".....Создание структуры AVB..."
-
 				echo "avbtool add_hashtree_footer --image "$outdir"/"$pack_d".new.img "$part_name" --do_not_generate_fec "$prop_avb" "$sign_print" "$sign_file"" >./"$config"/"$pack_d"_pack_avb_erofs.sh
-
 				chmod 755 ./"$config"/"$pack_d"_pack_avb_erofs.sh && . ./"$config"/"$pack_d"*_pack_avb_erofs.sh
-
 				if [ $(echo $?) -eq 0 ]; then
-					#size_out="$(busybox stat -c %s "$outdir"/"$pack_d".new.img)"
 					size_output_raw
 				else
 					echo
@@ -141,4 +119,3 @@ else
 	echo ".....Нет папки \""$pack_d"\" для сборки образа, или файла *_pack_erofs.sh."
 	echo
 fi
-#busybox rm -f ./fs_config ./file_contexts

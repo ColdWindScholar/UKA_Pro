@@ -20,7 +20,6 @@
  find "$pack_d" -type l -exec busybox stat -c '%N %u %g %a' {} \; | busybox sed 's!$! _l!' | busybox sed -e s!\'!!g >> $config/"$pack_d"_ff.txt
 
 if busybox test -s "$config"/"$pack_d"_ff.txt -a -s "$config"/"$pack_d"_avto_f.txt; then
-    #clear
  busybox diff -s "$config"/"$pack_d"_avto_f.txt "$config"/"$pack_d"_ff.txt | busybox grep -E "\+$t" | busybox sed 's!+!!' | busybox grep '_d$' > "$config"/"$pack_d"_avto_fff.txt
  busybox diff -s "$config"/"$pack_d"_avto_f.txt "$config"/"$pack_d"_ff.txt | busybox grep -E "\+$t" | busybox sed 's!+!!' | busybox grep '_f$' >> "$config"/"$pack_d"_avto_fff.txt
 busybox diff -s "$config"/"$pack_d"_avto_f.txt "$config"/"$pack_d"_ff.txt | busybox grep -E "\+$t" | busybox sed 's!+!!' | busybox grep '_l$' >> "$config"/"$pack_d"_avto_fff.txt
@@ -54,18 +53,10 @@ fi
 if [ "$vin" == "_l$" ]; then
  if [ -L "$a1" ]; then
 
- #name_f="$(busybox grep "$pack_d" "$config"/"$pack_d"_avto_f.txt | busybox grep "$vin")"
 
  link="$(busybox stat -c "%N" "$a1" 2> /dev/null | busybox awk '{ print $3 }' | busybox sed 's!'$PWD'!!' | busybox sed -e s!\'!!g)"
  perm_f="0 0 777 $link"
 
- #if [ ! -z "$name_f" ]; then
- 
- #perm_f="$(echo "$name_f" | busybox awk '{ print $4" "$5" "$6" "$3 }' | busybox sort | busybox uniq -c | busybox sort -nk1 | busybox awk -v m="$link" '{ print $2" "$3" "$4" "m }' | busybox tail -1)"
- #else
- #perm_f="0 0 777 $link"
- #echo > /dev/null
- #fi
 fi
  else
  perm_f="$(echo "$name_f" | busybox awk '{ print $2" "$3" "$4 }' | busybox sort | busybox uniq -c | busybox sort -nk1 | busybox awk '{ print $2" "$3" "$4 }' | busybox tail -1)"
@@ -76,9 +67,6 @@ fi
  name_a="$(echo "$a1" | busybox awk '{ print $1 }')"
  
  real_name="$(echo "$name_a" "$perm_f")"
-#echo "$name_a" "$perm_f" >> "$config"/"$pack_d"_fs_config.tmp
-#echo "$real_name" | busybox awk -v a="$perm_f" '{if(NF < 4) {next}} {if(NF = "4") {print $1" "a}}'>> "$config"/"$pack_d"_fs_config.tmp
-
 
 echo "$real_name" | busybox awk -v a="$perm_f" '{if(NF < 4) {next}} {if(NF == 4) {print $1" "a}} {if(NF == 5) {print $1" "a}}' >> "$config"/"$pack_d"_fs_config.tmp
 
