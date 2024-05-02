@@ -1,5 +1,4 @@
 #!/system/bin/sh
-export PYTHONHOME=/data/local/python/bin
 export LD_LIBRARY_PATH=/data/local/python/lib
 exec /data/local/python/bin/python3.10 "$@"
 
