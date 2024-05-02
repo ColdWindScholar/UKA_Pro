@@ -890,7 +890,6 @@ fi
              main_menu
              break ;;
          3 ) clear
-             /data/local/binary/install_sef.sh
              main_menu
              break ;;
          4 ) clear

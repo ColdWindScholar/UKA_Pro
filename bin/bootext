@@ -77,7 +77,7 @@ echo
 echo .....Конвертация file_contexts.bin.
 echo
 if [ ! -z "$(busybox hexdump -C -n 4 ./${file_b} | grep '8a ff 7c f9')" ]; then
-sefparse ./${file_b} 2> /dev/null
+ python31 /data/local/binary/sefparse.py ./${file_b}
 echo
 echo .....Получен file_contexts!.....
 echo
