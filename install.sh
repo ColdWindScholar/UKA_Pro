@@ -192,17 +192,17 @@ ui_print "- Moving files to /system, /data"
 rm -rf  $MODPATH/*;
 mkdir -p $MODPATH/system;
 [ ! -d $MODPATH/system ] && { ui_print "Aborting!"; ui_print "Failed to create module directory!"; abort; }
-unzip -p "$ZIPFILE" "bin.tar.xz" |tar xJ -C $MODPATH/system >/dev/null
+unzip -p "$ZIPFILE" "bin.tar.xz" |tar xJ -C $MODPATH/system
 #unzip -p "$ZIPFILE" "lib.tar.xz" |tar xJ -C $MODPATH/system >/dev/null
-unzip -o "$ZIPFILE" "uninstall.sh" -d $MODPATH >/dev/null
-unzip -p "$ZIPFILE" "binary.tar.xz" |tar xJ -C /data >/dev/null
+unzip -o "$ZIPFILE" "uninstall.sh" -d $MODPATH
+unzip -p "$ZIPFILE" "binary.tar.xz" |tar xJ -C /data
 #unzip -p "$ZIPFILE" "python39.tar.xz" |tar xJ -C /data/local >/dev/null
 mkdir /data/local/python
-unzip -p "$ZIPFILE" "python.tar.xz" |tar xJ -C /data/local/python >/dev/null
-unzip -p "$ZIPFILE" "aik.tar.xz" |tar xJ -C /data/local >/dev/null
+unzip -p "$ZIPFILE" "python.tar.xz" |tar xJ -C /data/local/python
+unzip -p "$ZIPFILE" "aik.tar.xz" |tar xJ -C /data/local
 ui_print "- Unmounting /system, /data, and rootfs"
-mount -o ro,remount "/" 2>/dev/null
-mount -o ro,remount "$sys_mount" 2>/dev/null
+mount -o ro,remount "/"
+mount -o ro,remount "$sys_mount"
 ui_print "- Done !"
 }
 
