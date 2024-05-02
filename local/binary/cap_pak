@@ -54,7 +54,7 @@ if [ -z "$("$dir_bb"/busybox hexdump -C -n 20000 "$pack_d".new.img | "$dir_bb"/b
 
 			"$dir_bb"/busybox umount "$dir_loop"
 			if [ "$?" -eq 0 ]; then
-				losetup -d "$loop" 2>/dev/null
+				losetup -d "$loop"
 				rm -rf "$dir_loop"
 				echo
 				echo ".....Успешно размонтировано: "$dir_loop""
