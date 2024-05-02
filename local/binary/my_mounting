@@ -1,6 +1,6 @@
 #!/system/bin/sh
 
-dir_bb="/data/local/binary/lib"
+dir_bb="/data/local/binary/"
 dir_loop="/data/local/$a"
 
 if [ -z "$("$dir_bb"/busybox mount | busybox cut -d" " -f3 | busybox grep "$dir_loop$")" ] ; then

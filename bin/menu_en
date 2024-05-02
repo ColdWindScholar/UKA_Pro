@@ -3,8 +3,6 @@
 clear
 dir="/data/local/binary"
 export PATH=/data/local/binary:$PATH
-#export LD_LIBRARY_PATH="/data/local/binary/lib"
-#PS3=" =>: "
 busybox find /data/local/UnpackerSystem/gen_keys -maxdepth 1 -empty -exec busybox rm -rf {} \;
 busybox find /data/local/UnpackerSystem/extract_keys -maxdepth 1 -empty -exec busybox rm -rf {} \;
 
