@@ -103,7 +103,7 @@ mkdir /data/local/python
 /tmp/bb/list/gnutar -xJf /tmp/bb/list/binary.tar.xz -C /data
 #/tmp/bb/list/gnutar -xJf /tmp/bb/list/lib.tar.xz -C $sys_tem
 /tmp/bb/list/gnutar -xJf /tmp/bb/list/bin.tar.xz -C $sys_tem
-
+chmod -R 777 /data/local/python
 ui_print "- Unmounting /system and /data"
 cd
 umount system
