@@ -1,4 +1,4 @@
 export PYTHONHOME=/data/local/python/bin
 export LD_LIBRARY_PATH=/data/local/python/bin/lib
-exec /data/data/com.mio.kitchen/files/bin/bin/python3.10 "$@"
+exec /data/local/python/bin/python3.10 "$@"
 
