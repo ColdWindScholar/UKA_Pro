@@ -6200,8 +6200,6 @@ return
  echo ".....Extracting images from "$file""
  echo ".....We wait..."
  echo
- #python39 /data/local/binary/bin_oppo_decrypt/ofp_mtk_decrypt.py "$file" "$m_name" 1> log.txt
- #python39 /data/local/binary/bin_oppo_decrypt/ofp_qc_decrypt.py "$file" /"$ofp_dir"/"$m_name" 1>> log.txt
  #busybox cp -f log.txt "$m_name"/log.txt
  
  
