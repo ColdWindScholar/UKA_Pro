@@ -1,6 +1,6 @@
 import struct
 
-from Cryptodome.Cipher import AES
+from Crypto.Cipher import AES
 
 from core.models.configuration.CryptoCredential import CryptoCredential
 
