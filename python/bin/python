@@ -1,4 +1,0 @@
-export PYTHONHOME=/data/data/com.mio.kitchen/files/bin
-export LD_LIBRARY_PATH=/data/data/com.mio.kitchen/files/bin/lib
-exec /data/data/com.mio.kitchen/files/bin/bin/python3.10 "$@"
-
