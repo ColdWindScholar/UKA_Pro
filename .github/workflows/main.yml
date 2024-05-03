@@ -35,6 +35,10 @@ jobs:
           chmod -R 777 ./
           tar caf bin.tar.xz bin
           tar caf binary.tar.xz local
+          cd python
+          tar caf ../python.tar.xz bin lib
+          cd ..
+          rm -rf python
           rm -rf bin
           rm -rf local
           rm -rf .github
