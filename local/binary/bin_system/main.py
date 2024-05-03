@@ -64,9 +64,6 @@ def find_7z():
     return path
 
 
-sz = find_7z()
-
-
 class BootWork:
     def __init__(self, filename):
         with open(filename, 'r+b') as f:
@@ -146,7 +143,7 @@ class Patch:
 
     def kernel_work(self, gz_data):
         p7z_pack = [
-            sz, 'a', 'dummy', '-tgzip', '-si', '-so', '-mx5', '-mmt4']
+            find_7z(), 'a', 'dummy', '-tgzip', '-si', '-so', '-mx5', '-mmt4']
         printi('Unpacking kernel data...')
         kernel_data = zlib.decompress(gz_data, 16 + zlib.MAX_WBITS)
         if not kernel_data:
