@@ -5,10 +5,12 @@
  unpacking payload.bin, repackaging boot(recovery).img,
  extracting file_contexts from boot.img,
  and converting file_contexts.bin right on the phone!
->[!NOTICE]
-> The Tool Only Support 64BIT DEVICE
- Using terminal emulator.
- Enter this commands:
+> [!NOTICE]
+ > The Tool Only Support 64BIT DEVICE
+
+
+Using terminal emulator.
+Enter this commands:
 
 	su
 
