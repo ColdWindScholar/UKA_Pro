@@ -1030,7 +1030,6 @@ main_menu() {
 							clear
 							aik_pack() {
 								pack_file="$(echo "$1" | busybox sed 's!./!!')"
-								#pack_file="$1"
 								avb_dir=/data/local/AIK-mobile/split_img
 								if busybox test -s "$avb_dir"/avb.img; then
 									size_orig="$(busybox cat "$avb_dir"/avb_size.txt)"
@@ -1038,20 +1037,6 @@ main_menu() {
 									prop_avb="$(busybox cat "$avb_dir"/avb.img | busybox awk '/    Prop:/ { print "--prop"" "$2":"$4 }' | tr '\n' ' ')"
 
 									check_alg="$(busybox cat "$avb_dir"/avb.img | busybox awk '/^Algorithm:/ { print $2 }')"
-
-									#if [ "$check_alg" != "NONE" -a ! -z "$check_alg" ]; then
-									# if [ "$check_alg" == "SHA256_RSA2048" ]; then
-									# sign_file="--key /data/local/binary/testkey_rsa2048.pem"
-									# sign_print="--algorithm $check_alg"
-									# elif [ "$check_alg" == "SHA256_RSA4096" ]; then
-									#sign_file="--key /data/local/binary/testkey_rsa4096.pem"
-									# sign_print="--algorithm $check_alg"
-
-									#elif [ "$check_alg" == "SHA256_RSA8192" ]; then
-									#sign_file="--key /data/local/binary/testkey_rsa8192.pem"
-									# sign_print="--algorithm $check_alg"
-									# fi
-									#fi
 
 									if [ "$check_alg" != "NONE" -a ! -z "$check_alg" ]; then
 										case "$check_alg" in
