@@ -48,9 +48,6 @@ nn1() {
 	echo ".....When entering 0, save folder: /data/local/UnpackerSuper/output"
 	echo ".....When entering 1, save folder: /data/local/UnpackerSuper"
 	echo ".....Enter 0, 1, or your path to the image save folder..."
-	#echo "  For example: 0"
-	#echo "  For example: /sdcard/test"
-	#echo "  example input: /storage/F960-18E7"
 	echo
 	read h && if [ "$h" = "0" ]; then
 		outdir=/data/local/UnpackerSystem
