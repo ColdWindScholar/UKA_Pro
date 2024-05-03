@@ -7,7 +7,7 @@ def rul(st):
     for i in data:
         if not i.isdigit():
             data = data.replace(i, '')
-    for _ in range(2):
+    for _ in [0, 1]:
         if data[0] != '0':
             result.append(data[:4])
             data = data[4:]
