@@ -17,7 +17,7 @@ from urllib.parse import quote_from_bytes as urlquote_from_bytes
 __all__ = [
     "PurePath", "PurePosixPath",
     "Path", "PosixPath",
-    ]
+]
 
 #
 # Internals
@@ -34,6 +34,7 @@ _IGNORED_WINERRORS = (
     _WINERROR_NOT_READY,
     _WINERROR_INVALID_NAME,
     _WINERROR_CANT_RESOLVE_FILENAME)
+
 
 def _ignore_error(exception):
     return (getattr(exception, 'errno', None) in _IGNORED_ERROS or
@@ -109,7 +110,6 @@ class _Flavour(object):
         return drv2, root2, parts2
 
 
-
 class _PosixFlavour(_Flavour):
     sep = '/'
     altsep = ''
@@ -152,7 +152,6 @@ class _PosixFlavour(_Flavour):
         return 'file://' + urlquote_from_bytes(bpath)
 
 
-
 _posix_flavour = _PosixFlavour()
 
 
@@ -162,7 +161,6 @@ class _Accessor:
 
 
 class _NormalAccessor(_Accessor):
-
     stat = os.stat
 
     open = io.open
@@ -259,6 +257,7 @@ def _make_selector(pattern_parts, flavour):
     else:
         cls = _PreciseSelector
     return cls(pat, child_parts, flavour)
+
 
 if hasattr(functools, "lru_cache"):
     _make_selector = functools.lru_cache()(_make_selector)
@@ -640,7 +639,7 @@ class PurePath(object):
             raise ValueError("%r has an empty name" % (self,))
         drv, root, parts = self._flavour.parse_parts((name,))
         if (not name or name[-1] in [self._flavour.sep, self._flavour.altsep]
-            or drv or root or len(parts) != 1):
+                or drv or root or len(parts) != 1):
             raise ValueError("Invalid name %r" % (name))
         return self._from_parsed_parts(self._drv, self._root,
                                        self._parts[:-1] + [name])
@@ -698,7 +697,7 @@ class PurePath(object):
         if (root or drv) if n == 0 else cf(abs_parts[:n]) != cf(to_abs_parts):
             formatted = self._format_parsed_parts(to_drv, to_root, to_parts)
             raise ValueError("{!r} is not in the subpath of {!r}"
-                    " OR one path is relative and the other is absolute."
+                             " OR one path is relative and the other is absolute."
                              .format(str(self), str(formatted)))
         return self._from_parsed_parts('', root if n == 1 else '',
                                        abs_parts[n:])
@@ -796,6 +795,7 @@ class PurePath(object):
                 return False
         return True
 
+
 # Can't subclass os.PathLike from PurePath and keep the constructor
 # optimizations in PurePath._parse_args().
 os.PathLike.register(PurePath)
@@ -809,9 +809,6 @@ class PurePosixPath(PurePath):
     """
     _flavour = _posix_flavour
     __slots__ = ()
-
-
-
 
 
 # Filesystem-accessing classes
@@ -1309,7 +1306,7 @@ class Path(PurePath):
         (as returned by os.path.expanduser)
         """
         if (not (self._drv or self._root) and
-            self._parts and self._parts[0][:1] == '~'):
+                self._parts and self._parts[0][:1] == '~'):
             homedir = self._accessor.expanduser(self._parts[0])
             if homedir[:1] == "~":
                 raise RuntimeError("Could not determine home directory.")
@@ -1324,4 +1321,3 @@ class PosixPath(Path, PurePosixPath):
     On a POSIX system, instantiating a Path should return this object.
     """
     __slots__ = ()
-
