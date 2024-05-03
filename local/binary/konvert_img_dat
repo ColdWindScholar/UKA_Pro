@@ -13,14 +13,11 @@ myk() {
 		echo
 	fi
 	if [ $(echo $?) -eq 0 ]; then
-		#echo
 		echo ".....Успешно завершена конвертация в .br!"
 		echo "$print_size_out"
 		echo "$print_size_free"
-		#echo
 		busybox rm -f "$file"
 	else
-		#echo
 		echo ".....error: Ошибка при конвертации в .br!"
 		echo
 	fi
