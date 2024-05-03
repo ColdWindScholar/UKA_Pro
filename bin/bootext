@@ -57,11 +57,11 @@ echo .....В boot.img не найден file_contexts.
 fi
 else
 echo .....Найден boot.img от intel.
-mkdir -p ./work/ramdisk-unpack 2> /dev/null
+mkdir -p ./work/ramdisk-unpack
 cd ./work
 ${dirbin}/unpack_intel ../boot*.img ./zlmage ./ramdisk.cpio.gz
 cd ./ramdisk-unpack
-busybox gunzip -c ../ramdisk.cpio.gz | busybox cpio -i 2> /dev/null
+busybox gunzip -c ../ramdisk.cpio.gz | busybox cpio -i
 echo
 busybox cp -fv ./${file_b} ./${file} ${dirboot} 2> /dev/null | busybox awk -F"'" '{ print ".....Получен файл:"" "substr($2,3)"!" }'
 echo
