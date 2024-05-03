@@ -4,7 +4,7 @@ from errno import ENOENT, ENOTDIR, EBADF, ELOOP
 import fnmatch
 import functools
 import io
-import ntpath
+
 import os
 import posixpath
 import re
@@ -15,8 +15,8 @@ from stat import S_ISDIR, S_ISLNK, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
 from urllib.parse import quote_from_bytes as urlquote_from_bytes
 
 __all__ = [
-    "PurePath", "PurePosixPath", "PureWindowsPath",
-    "Path", "PosixPath", "WindowsPath",
+    "PurePath", "PurePosixPath",
+    "Path", "PosixPath",
     ]
 
 #
@@ -109,124 +109,6 @@ class _Flavour(object):
         return drv2, root2, parts2
 
 
-class _WindowsFlavour(_Flavour):
-    # Reference for Windows paths can be found at
-    # http://msdn.microsoft.com/en-us/library/aa365247%28v=vs.85%29.aspx
-
-    sep = '\\'
-    altsep = '/'
-    has_drv = True
-    pathmod = ntpath
-
-    is_supported = (os.name == 'nt')
-
-    drive_letters = set('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ')
-    ext_namespace_prefix = '\\\\?\\'
-
-    reserved_names = (
-        {'CON', 'PRN', 'AUX', 'NUL', 'CONIN$', 'CONOUT$'} |
-        {'COM%s' % c for c in '123456789\xb9\xb2\xb3'} |
-        {'LPT%s' % c for c in '123456789\xb9\xb2\xb3'}
-        )
-
-    # Interesting findings about extended paths:
-    # * '\\?\c:\a' is an extended path, which bypasses normal Windows API
-    #   path processing. Thus relative paths are not resolved and slash is not
-    #   translated to backslash. It has the native NT path limit of 32767
-    #   characters, but a bit less after resolving device symbolic links,
-    #   such as '\??\C:' => '\Device\HarddiskVolume2'.
-    # * '\\?\c:/a' looks for a device named 'C:/a' because slash is a
-    #   regular name character in the object namespace.
-    # * '\\?\c:\foo/bar' is invalid because '/' is illegal in NT filesystems.
-    #   The only path separator at the filesystem level is backslash.
-    # * '//?/c:\a' and '//?/c:/a' are effectively equivalent to '\\.\c:\a' and
-    #   thus limited to MAX_PATH.
-    # * Prior to Windows 8, ANSI API bytes paths are limited to MAX_PATH,
-    #   even with the '\\?\' prefix.
-
-    def splitroot(self, part, sep=sep):
-        first = part[0:1]
-        second = part[1:2]
-        if (second == sep and first == sep):
-            # XXX extended paths should also disable the collapsing of "."
-            # components (according to MSDN docs).
-            prefix, part = self._split_extended_path(part)
-            first = part[0:1]
-            second = part[1:2]
-        else:
-            prefix = ''
-        third = part[2:3]
-        if (second == sep and first == sep and third != sep):
-            # is a UNC path:
-            # vvvvvvvvvvvvvvvvvvvvv root
-            # \\machine\mountpoint\directory\etc\...
-            #            directory ^^^^^^^^^^^^^^
-            index = part.find(sep, 2)
-            if index != -1:
-                index2 = part.find(sep, index + 1)
-                # a UNC path can't have two slashes in a row
-                # (after the initial two)
-                if index2 != index + 1:
-                    if index2 == -1:
-                        index2 = len(part)
-                    if prefix:
-                        return prefix + part[1:index2], sep, part[index2+1:]
-                    else:
-                        return part[:index2], sep, part[index2+1:]
-        drv = root = ''
-        if second == ':' and first in self.drive_letters:
-            drv = part[:2]
-            part = part[2:]
-            first = third
-        if first == sep:
-            root = first
-            part = part.lstrip(sep)
-        return prefix + drv, root, part
-
-    def casefold(self, s):
-        return s.lower()
-
-    def casefold_parts(self, parts):
-        return [p.lower() for p in parts]
-
-    def compile_pattern(self, pattern):
-        return re.compile(fnmatch.translate(pattern), re.IGNORECASE).fullmatch
-
-    def _split_extended_path(self, s, ext_prefix=ext_namespace_prefix):
-        prefix = ''
-        if s.startswith(ext_prefix):
-            prefix = s[:4]
-            s = s[4:]
-            if s.startswith('UNC\\'):
-                prefix += s[:3]
-                s = '\\' + s[3:]
-        return prefix, s
-
-    def is_reserved(self, parts):
-        # NOTE: the rules for reserved names seem somewhat complicated
-        # (e.g. r"..\NUL" is reserved but not r"foo\NUL" if "foo" does not
-        # exist). We err on the side of caution and return True for paths
-        # which are not considered reserved by Windows.
-        if not parts:
-            return False
-        if parts[0].startswith('\\\\'):
-            # UNC paths are never reserved
-            return False
-        name = parts[-1].partition('.')[0].partition(':')[0].rstrip(' ')
-        return name.upper() in self.reserved_names
-
-    def make_uri(self, path):
-        # Under Windows, file URIs use the UTF-8 encoding.
-        drive = path.drive
-        if len(drive) == 2 and drive[1] == ':':
-            # It's a path on a local drive => 'file:///c:/a/b'
-            rest = path.as_posix()[2:].lstrip('/')
-            return 'file:///%s/%s' % (
-                drive, urlquote_from_bytes(rest.encode('utf-8')))
-        else:
-            # It's a path on a network drive => 'file://host/share/a/b'
-            return 'file:' + urlquote_from_bytes(path.as_posix().encode('utf-8'))
-
 
 class _PosixFlavour(_Flavour):
     sep = '/'
@@ -270,7 +152,7 @@ class _PosixFlavour(_Flavour):
         return 'file://' + urlquote_from_bytes(bpath)
 
 
-_windows_flavour = _WindowsFlavour()
+
 _posix_flavour = _PosixFlavour()
 
 
@@ -558,7 +440,7 @@ class PurePath(object):
         new PurePath object.
         """
         if cls is PurePath:
-            cls = PureWindowsPath if os.name == 'nt' else PurePosixPath
+            cls = PurePosixPath
         return cls._from_parts(args)
 
     def __reduce__(self):
@@ -929,14 +811,7 @@ class PurePosixPath(PurePath):
     __slots__ = ()
 
 
-class PureWindowsPath(PurePath):
-    """PurePath subclass for Windows systems.
 
-    On a Windows system, instantiating a PurePath should return this object.
-    However, you can also instantiate it directly on any system.
-    """
-    _flavour = _windows_flavour
-    __slots__ = ()
 
 
 # Filesystem-accessing classes
@@ -956,7 +831,7 @@ class Path(PurePath):
 
     def __new__(cls, *args, **kwargs):
         if cls is Path:
-            cls = WindowsPath if os.name == 'nt' else PosixPath
+            cls = PosixPath
         self = cls._from_parts(args)
         if not self._flavour.is_supported:
             raise NotImplementedError("cannot instantiate %r on your system"
@@ -1450,12 +1325,3 @@ class PosixPath(Path, PurePosixPath):
     """
     __slots__ = ()
 
-class WindowsPath(Path, PureWindowsPath):
-    """Path subclass for Windows systems.
-
-    On a Windows system, instantiating a Path should return this object.
-    """
-    __slots__ = ()
-
-    def is_mount(self):
-        raise NotImplementedError("Path.is_mount() is unsupported on this system")
