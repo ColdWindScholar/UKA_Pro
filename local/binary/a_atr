@@ -211,7 +211,6 @@ attr() {
 		cat "$config"/"$xx"_gg_f.txt | busybox grep "$k" | busybox awk -F"/" '!($1 $2 $3 in a) {a[$1 $2 $3];print}'
 	else
 		cat "$config"/"$xx"_gg_f.txt | busybox grep "$k" | busybox awk -F"/" '!($1 $2 in a) {a[$1 $2];print}'
-		#return
 	fi
 	return
 }
